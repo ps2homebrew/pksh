@@ -73,7 +73,10 @@ main(int argc, char **argv)
     if ( (ps2link_open(&sock, local_ip)) < 0 ) {
         // do we have an alternative ip ?
 		close(sock);
-        ps2link_open(&sock, dst_ip);
+        if ( ps2link_open(&sock, dst_ip) < 0 ) {
+            printf("Unable to connect to ps2link server\n");
+            return -1;
+        }
         printf("Connected to %s ps2link server\n", dst_ip);
         local = 0;
     } else {

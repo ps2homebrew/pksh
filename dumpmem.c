@@ -66,7 +66,10 @@ main(int argc, char **argv)
     // check if pksh is running, if so use it
     if ( (sock = ps2link_open(&sock, local_ip)) < 0 ) {
         // do we have an alternative ip ?
-        sock = ps2link_open(&sock, dst_ip);
+        if ( (sock = ps2link_open(&cmd_fd, dst_ip)) < 0 ) {
+            printf("Unable to connect to ps2link server\n");
+            return -1;
+        }
         printf("Connected to %s ps2link server\n", dst_ip);
         local = 0;
     } else {
