@@ -53,6 +53,12 @@
 
 extern char **environ;
 
+static const int DUMP_REG_MAX = 12;
+static const char DUMP_REG_SYM[13][6] = {
+	"dma", "intc", "timer", "gs", "sif", "fifo",
+	"gif", "vif0", "vif1", "ipu", "all", "vu0", "vu1"
+};
+
 char *trim(char *);
 char *stripwhite();
 char * dupstr(char *s);
@@ -65,4 +71,9 @@ int argv_split(char *, const char *);
 int size_file(char *);
 int read_file(char *, unsigned char *, unsigned int);
 void arg_prepend_host(char *new, char *old);
+void arg_get_fsname(char *fsname, char *arg);
+void arg_get_device(char *device, char *arg);
+void arg_get_topath(char *topath, char *arg);
+void arg_get_frompath(char *frompath, char *arg);
+int get_register_index(char *str, int size);
 #endif

@@ -7,7 +7,7 @@ NPLIBS = -lusb -lreadline -lc -lcurses -lncurses
 RM = rm -rf
 TAR = tar -cf
 ZIP = gzip -9
-FILES = pksh/Makefile pksh/README.npsh pksh/README.pksh  pksh/execee.c pksh/execiop.c\
+FILES = pksh/Makefile pksh/README.npsh pksh/README.pksh  pksh/eeexec.c pksh/iopexec.c\
 	pksh/pksh.c pksh/pksh.h pksh/linkproto_stub.c pksh/linkproto_core.c\
 	pksh/reset.c pksh/naplink.c pksh/pl2301.h\
 	pksh/pl2301.c pksh/npsh.h\
@@ -16,6 +16,9 @@ FILES = pksh/Makefile pksh/README.npsh pksh/README.pksh  pksh/execee.c pksh/exec
     pksh/SAMPLE.pkshrc pksh/LICENSE pksh/rl_common.c pksh/rl_common.h\
 	pksh/ps2fs.h pksh/netfsproto_core.c
 
+
+BATCHIO_OBJ = common.o linkproto_stub.o linkproto_core.o batch.o
+BATCH_OBJ = common.o linkproto_stub.o linkproto_core.o
 PKSH_OBJ = rl_common.o common.o linkproto_stub.o linkproto_core.o pksh.o \
 		netfsproto_core.o
 NPSH_OBJ = rl_common.o common.o packet.o pl2301.o npsh.o naplink.o
@@ -29,28 +32,32 @@ CFLAGS += -Wchar-subscripts -Wformat-security
 .o:
 	$(CC) $(CFLAGS) -o $@ -c $< $(INC)
 
-all: pksh npsh execee execiop reset
+all: pksh npsh
+utils: eeexec iopexec reset dumpmem dumpreg viewmem gsexec
 
 pksh: $(PKSH_OBJ)
 	$(CC) -g $(PKSH_OBJ) -o $@ $(LIBS) $(INC)
 
-execee: common.o linkproto_stub.o execee.o
-	$(CC) common.o linkproto_stub.o execee.o -o $@
+eeexec: $(BATCHIO_OBJ) eeexec.o
+	$(CC) $(BATCHIO_OBJ) eeexec.o -o $@
 
-execiop: common.o linkproto_stub.o execiop.o
-	$(CC) common.o linkproto_stub.o execiop.o -o $@
+iopexec: $(BATCHIO_OBJ) iopexec.o
+	$(CC) $(BATCHIO_OBJ) iopexec.o -o $@
 
-reset: common.o linkproto_stub.o reset.o 
-	$(CC) common.o linkproto_stub.o reset.o -o $@
+reset: $(BATCH_OBJ) reset.o 
+	$(CC) $(BATCH_OBJ) reset.o -o $@
 
-dumpmem: common.o linkproto_stub.o dumpmem.o 
-	$(CC) common.o linkproto_stub.o dumpmem.o -o $@
+gsexec: $(BATCHIO_OBJ) gsexec.o 
+	$(CC) $(BATCHIO_OBJ) gsexec.o -o $@
 
-dumpreg: common.o linkproto_stub.o dumpreg.o 
-	$(CC) common.o linkproto_stub.o dumpreg.o -o $@
+dumpmem: $(BATCHIO_OBJ) dumpmem.o 
+	$(CC) $(BATCHIO_OBJ) dumpmem.o -o $@
 
-viewmem: common.o linkproto_stub.o viewmem.o 
-	$(CC) common.o linkproto_stub.o viewmem.o -o $@
+dumpreg: $(BATCHIO_OBJ) dumpreg.o 
+	$(CC) $(BATCHIO_OBJ) dumpreg.o -o $@
+
+viewmem: $(BATCHIO_OBJ) viewmem.o 
+	$(CC) $(BATCHIO_OBJ) viewmem.o -o $@
 
 naplink.o:
 	$(CC) -c naplink.c $(INC)

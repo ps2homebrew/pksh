@@ -1,5 +1,5 @@
 /*
- * pukklink Shell v1.0
+ * pukklink/ps2link Shell v2.1
  *
  * Copyright (c) Khaled Daham
  * All rights reserved.
@@ -29,6 +29,7 @@
  *
  */
 #include "pksh.h"
+#include "netfsproto_core.h"
 
 static char dst_ip[16] = "192.168.0.10";
 static char src_ip[16] = "0.0.0.0";
@@ -53,7 +54,7 @@ main(int argc, char* argv[])
     int client[MAX_CLIENTS];
     fd_set master_set, readset, clientset;
     VERBOSE = 0;
-    printf("pksh version 2.0\n");
+    printf("pksh version 2.1\n");
     read_config();
     if (argc == 2) {
         strcpy(dst_ip, argv[1]);
@@ -64,16 +65,16 @@ main(int argc, char* argv[])
 
     printf(" Connecting to %s", dst_ip);
     fflush(stdout);
-    pko_srv_fd = pko_cmd_setup(dst_ip, PKO_SRV_PORT, 60);
+    pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 60);
     if (pko_srv_fd < 0) {
         printf(", failed\n");
         return 1;
     }
 
     // fast check if ps2_netfs is here
-    ps2_netfs_fd = pko_ps2netfs_setup(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
     if (ps2_netfs_fd > 0) {
-        printf("PS2NetFS found\n");
+        printf("\n PS2NetFS service found!\n");
     }
 
     // client stuff
@@ -86,25 +87,34 @@ main(int argc, char* argv[])
     printf("\n");
 
     if (DUMPSCREEN) {
-        pko_cmd_con(dst_ip, PKO_CMD_PORT);
-        pko_dump2screen_req(pko_cmd_fd);
-    }
-    else
-    {
-        pko_cmd_con(dst_ip, PKO_CMD_PORT);
-        pko_dump2pc_req(pko_cmd_fd);
+        pko_cmd_con(dst_ip, CMD_PORT);
+        pko_dump2screen_req(cmd_fd);
+    } else {
+        pko_cmd_con(dst_ip, CMD_PORT);
+        pko_dump2pc_req(cmd_fd);
     }
 
-    pko_log_fd = pko_log_setup(src_ip, PKO_LOG_PORT);
-    pksh_srv_fd = pko_srv_setup(src_ip, PKO_SRV_PORT);
+    log_fd = log_listener(src_ip, LOG_PORT);
+
+    if ( log_fd < 0 ) {
+        perror("");
+        printf("Unable to start log service!\n");
+        return 1;
+    }
+    pksh_srv_fd = pko_srv_setup(src_ip, SRV_PORT);
+    if ( pksh_srv_fd < 0 ) {
+        perror("");
+        printf("Unable to start command server!\n");
+        return 1;
+    }
     FD_ZERO(&master_set);
     FD_SET(0, &master_set);
     FD_SET(pko_srv_fd, &master_set);
-    FD_SET(pko_log_fd, &master_set);
+    FD_SET(log_fd, &master_set);
     FD_SET(pksh_srv_fd, &master_set);
     client[0] = 0;
     client[1] = pko_srv_fd;
-    client[2] = pko_log_fd;
+    client[2] = log_fd;
     client[3] = pksh_srv_fd;
     maxfd = pksh_srv_fd;
     maxi = 3;
@@ -117,7 +127,7 @@ main(int argc, char* argv[])
         if ( ret < 0 )
         {
             perror("select");
-            return 0;
+            break;
         } else if (ret == 0) {
             /* no file desc are ready, lets move on in life */
         } else {
@@ -128,10 +138,10 @@ main(int argc, char* argv[])
                 if ( !FD_ISSET(sockfd, &readset) ) {
                     continue;
                 }
-                if ( sockfd == pko_log_fd ) {
+                if ( sockfd == log_fd ) {
                     if(prompt)
                         fprintf(stdout, "\n");
-                    pko_log_read(pko_log_fd);
+                    pko_log_read(log_fd);
                     prompt = 0;
                 } else if (sockfd == 0) {
                     prompt = 1;
@@ -183,13 +193,19 @@ main(int argc, char* argv[])
     if ( (ret = close(pko_srv_fd)) == -1 ) {
         perror("pko_srv_fd");
     }
-    if ( (ret = close(pko_log_fd)) == -1 ) {
-        perror("pko_log_fd");
+    if ( (ret = close(log_fd)) == -1 ) {
+        perror("log_fd");
     }
     if ( log_to_file ) {
         if ((ret = close(log_f_fd)) == -1)
             perror("log_f_fd");
     }
+    if ( ps2_netfs_fd > 0 ) {
+        if ((ret = close(ps2_netfs_fd)) == -1) {
+            perror("");
+        }
+    }
+
     if (strcmp(pksh_history, "") != 0 ) {
         if ( (ret = write_history(pksh_history)) != 0) 
             perror("write_history");
@@ -241,7 +257,7 @@ pko_srv_read(int fd) {
             change_prompt();
             while(1) {
                 sleep(1);
-                pko_srv_fd = pko_cmd_setup(dst_ip, PKO_SRV_PORT, 1);
+                pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 1);
                 if (pko_srv_fd > 0) {
                     break;
                 }
@@ -262,14 +278,14 @@ pko_srv_read(int fd) {
             hlen - sizeof(pko_pkt_hdr));
 
         switch (cmd) {
-            case PKO_OPEN_CMD:
+            case OPEN_CMD:
                 if (VERBOSE) {
                     gettimeofday(&benchtime, NULL);
                     time1=(benchtime.tv_sec - time_base)*USEC+benchtime.tv_usec;
                 }
                 pko_open_file(&recv_packet[0]);
                 break;
-            case PKO_CLOSE_CMD:
+            case CLOSE_CMD:
                 if (VERBOSE)
                 {
                     gettimeofday(&benchtime, NULL);
@@ -278,25 +294,25 @@ pko_srv_read(int fd) {
                 }
                 pko_close_file(&recv_packet[0]);
                 break;
-            case PKO_READ_CMD:
+            case READ_CMD:
                 pko_read_file(&recv_packet[0]);
                 break;
-            case PKO_WRITE_CMD:
+            case WRITE_CMD:
                 pko_write_file(&recv_packet[0]);
                 break;
-            case PKO_LSEEK_CMD:
+            case LSEEK_CMD:
                 pko_lseek_file(&recv_packet[0]);
                 break;
-            case PKO_DOPEN_CMD:
+            case DOPEN_CMD:
                 pko_open_dir(&recv_packet[0]);
                 break;
-            case PKO_DREAD_CMD:
+            case DREAD_CMD:
                 pko_read_dir(&recv_packet[0]);
                 break;
-            case PKO_DCLOSE_CMD:
+            case DCLOSE_CMD:
                 pko_close_dir(&recv_packet[0]);
                 break;
-            case PKO_DUMPMEM_CMD:
+            case DUMPMEM_CMD:
                 dumpmem( 
                     ((pko_pkt_dumpmem_req*)
                         &recv_packet[0])->argv,
@@ -306,41 +322,41 @@ pko_srv_read(int fd) {
                             &recv_packet[0])->size)
                     );
                 break;
-            case PKO_DUMPREGS_CMD:
+            case DUMPREGS_CMD:
                 dumpregs(
                     ((pko_pkt_dumpregs_req*)&recv_packet[0])->argv,
                     ntohl(((pko_pkt_dumpregs_req*)&recv_packet[0])->regs)
                     );
                 break;
-            case PKO_GSEXEC_CMD:
+            case GSEXEC_CMD:
                 cli_gsexec(
                     ((pko_pkt_gsexec_req*)&recv_packet[0])->file
                     );
-            case PKO_STOPVU_CMD:
-                pko_cmd_con(dst_ip, PKO_CMD_PORT);
-                pko_stop_vu(pko_cmd_fd, 
+            case STOPVU_CMD:
+                pko_cmd_con(dst_ip, CMD_PORT);
+                pko_stop_vu(cmd_fd, 
                     ntohs(((pko_pkt_stopvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
-            case PKO_STARTVU_CMD:
-                pko_cmd_con(dst_ip, PKO_CMD_PORT);
-                pko_start_vu(pko_cmd_fd, 
+            case STARTVU_CMD:
+                pko_cmd_con(dst_ip, CMD_PORT);
+                pko_start_vu(cmd_fd, 
                     ntohs(((pko_pkt_startvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
-            case PKO_EXECEE_CMD:
+            case EXECEE_CMD:
                 cli_execee(
                     ((pko_pkt_execee_req *)&recv_packet[0])->argv
                     );
                 break;
-            case PKO_EXECIOP_CMD:
+            case EXECIOP_CMD:
                 cli_execeiop(
                     ((pko_pkt_execiop_req*)&recv_packet[0])->argv
                     );
                 break;
-            case PKO_RESET_CMD:
+            case RESET_CMD:
                 cli_reset();
                 break;
             default:
@@ -412,22 +428,6 @@ cli_make(arg)
 }
 
 int
-cli_mkdir(arg)
-    char *arg;
-{
-    return 0;
-}
-
-int
-cli_mount(arg)
-    char *arg;
-{
-    if ( ps2_netfs_fd < 0 ) {
-    }
-    return 0;
-}
-
-int
 cli_list(arg)
     char *arg;
 {
@@ -461,29 +461,25 @@ cli_cd(arg)
 }
 
 int
-cli_format(arg) {
-    return 0;
-}
-
-int
 cli_gsexec(arg)
     char *arg;
 {
     int size, ret, argvlen;
-    unsigned char argv[PKO_MAX_PATH];
+    unsigned char argv[MAX_PATH];
     trim(arg);
     size = size_file(arg);
     if ( size > 16384 ) {
         printf("Data file too big\n");
         return -1;
     } else if ( size == 0 ) {
+        printf("Data file is zero byte large\n");
         return -1;
     }
 
     fix_cmd_arg(argv, arg, &argvlen);
 
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    ret = pko_gsexec_req(pko_cmd_fd, argv, size);
+    pko_cmd_con(dst_ip, CMD_PORT);
+    ret = pko_gsexec_req(cmd_fd, argv, size);
     if ( ret < 0) {
         perror(" gsexec failed");
     }
@@ -538,11 +534,11 @@ cli_execeiop(arg)
 {
     int ret;
     unsigned int argc, argvlen;
-    unsigned char argv[PKO_MAX_PATH];
+    unsigned char argv[MAX_PATH];
     state = 1;
     argc = fix_cmd_arg(argv, arg, &argvlen);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    ret = pko_execiop_req(pko_cmd_fd, argv, argvlen, argc);
+    pko_cmd_con(dst_ip, CMD_PORT);
+    ret = pko_execiop_req(cmd_fd, argv, argvlen, argc);
     if ( ret < 0) {
         perror(" execiop failed");
     }
@@ -555,14 +551,14 @@ cli_execee(arg)
 {
     int ret;
     unsigned int argc, argvlen;
-    unsigned char argv[PKO_MAX_PATH];
+    unsigned char argv[MAX_PATH];
     if ( state == 1 ) {
         cli_reset("");
         close(pko_srv_fd);
         change_prompt();
         while(1) {
             sleep(1);
-            pko_srv_fd = pko_cmd_setup(dst_ip, PKO_SRV_PORT, 1);
+            pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 1);
             if (pko_srv_fd > 0) {
                 break;
             }
@@ -571,8 +567,8 @@ cli_execee(arg)
     }
     state = 1;
     argc = fix_cmd_arg(argv, arg, &argvlen);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    ret = pko_execee_req(pko_cmd_fd, argv, argvlen, argc);
+    pko_cmd_con(dst_ip, CMD_PORT);
+    ret = pko_execee_req(cmd_fd, argv, argvlen, argc);
     if ( ret < 0) {
         perror(" execee failed");
     }
@@ -583,9 +579,9 @@ int
 cli_dumpregs(arg)
     char *arg;
 {
-    int i, ret;
+    int ret;
     unsigned int regs = DUMP_REG_MAX;
-    char file[PKO_MAX_PATH];
+    char file[MAX_PATH];
     char *ptr;
     trim(arg);
     if ((ptr = strchr(arg, ' ')) == NULL) {
@@ -596,24 +592,33 @@ cli_dumpregs(arg)
     if ((ptr = strchr(arg, ' ')) == NULL) {
         return -1;
     }
-    for(i = 0; i < DUMP_REG_MAX; i++) {
-        if(!strncmp(arg, DUMP_REG_SYM[i], ptr-arg) ) {
-            regs = i;
-            break;
-        }
-    }
+
+    regs = get_register_index(&ptr+1, ptr-arg);
     ret = dumpregs(file, regs);
     if ( ret < 0) {
         perror(" dumpregs failed");
     }
     return 0;
 }
+
+int
+cli_debug() {
+    if (pko_debug()) {
+        pko_set_debug(0);
+        printf(" Debug off\n");
+    } else {
+        pko_set_debug(1);
+        printf(" Debug on\n");
+    }
+    return 0;
+}
+
 int
 dumpregs(char *file, unsigned int regs) {
-    char argv[PKO_MAX_PATH];
+    char argv[MAX_PATH];
     arg_prepend_host(argv, file);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    return pko_dumpregs_req(pko_cmd_fd, argv, regs);
+    pko_cmd_con(dst_ip, CMD_PORT);
+    return pko_dumpregs_req(cmd_fd, argv, regs);
 }
 
 int
@@ -623,7 +628,7 @@ cli_dumpmem(arg)
     unsigned int size = 0;
     unsigned int offset = 0;
     int ret;
-    char file[PKO_MAX_PATH];
+    char file[MAX_PATH];
     char *ptr;
     trim(arg);
     if ((ptr = strchr(arg, ' ')) == NULL) {
@@ -646,10 +651,10 @@ cli_dumpmem(arg)
 
 int
 dumpmem(char *file, unsigned int offset, unsigned int size) {
-    char argv[PKO_MAX_PATH];
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    char argv[MAX_PATH];
+    pko_cmd_con(dst_ip, CMD_PORT);
     arg_prepend_host(argv, file);
-    return pko_dumpmemory_req(pko_cmd_fd, argv, offset, size);
+    return pko_dumpmemory_req(cmd_fd, argv, offset, size);
 }
 
 int
@@ -657,13 +662,13 @@ cli_exception(arg)
     char *arg;
 {
     trim(arg);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    pko_cmd_con(dst_ip, CMD_PORT);
     if (strcmp(arg, "console") == 0) {
         DUMPSCREEN = 0;
-        pko_dump2pc_req(pko_cmd_fd);
+        pko_dump2pc_req(cmd_fd);
     } else if (strcmp(arg, "screen") == 0) {
         DUMPSCREEN = 1;
-        pko_dump2screen_req(pko_cmd_fd);
+        pko_dump2screen_req(cmd_fd);
     } else {
         printf("Unknown arg to dump: \"%s\"\n", arg);
     }
@@ -671,30 +676,31 @@ cli_exception(arg)
 }
 
 int
-cli_umount(char *arg) {
-    return 0;
+cli_vumem(char *arg) {
+    // if no tmpfile echo "sorry set tempfile in .pkshrc"
+    // dump vu mem to tmpfile
+    // load tmpfile and display, we need to figure out the window height.
 }
-
 
 int
 cli_vustart(char *arg) {
     int vpu = strtol(arg, (char **)NULL, 10);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    pko_cmd_con(dst_ip, CMD_PORT);
     if ( vpu != 0 && vpu != 1 ) {
         return -1;
     }
-    pko_start_vu(pko_cmd_fd, vpu);
+    pko_start_vu(cmd_fd, vpu);
     return 0;
 }
 
 int
 cli_vustop(char *arg) {
     int vpu = strtol(arg, (char **)NULL, 10);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    pko_cmd_con(dst_ip, CMD_PORT);
     if ( vpu != 0 && vpu != 1 ) {
         return -1;
     }
-    pko_stop_vu(pko_cmd_fd, vpu);
+    pko_stop_vu(cmd_fd, vpu);
     return 0;
 }
 
@@ -716,15 +722,15 @@ cli_vustop(char *arg) {
 
 int
 cli_poweroff() {
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    pko_poweroff_req(pko_cmd_fd);
+    pko_cmd_con(dst_ip, CMD_PORT);
+    pko_poweroff_req(cmd_fd);
     return 0;
 }
 
 int
 cli_status() {
     printf(" TCP srv fd = %d\n", pko_srv_fd);
-    printf(" UDP log fd = %d\n", pko_log_fd);
+    printf(" UDP log fd = %d\n", log_fd);
     printf(" PKSH cmd fd = %d\n", pksh_srv_fd);
     printf(" PS2NetFS fd = %d\n", ps2_netfs_fd);
     if ( log_to_file )
@@ -751,38 +757,23 @@ cli_status() {
 }
 
 int
-cli_sync() {
-    return 0;
-}
-
-int
 cli_quit() {
     doloop = 0;
     return 0;
 }
 
 int
-cli_rename() {
-    return 0;
-}
-
-int
 cli_reconnect() {
     close(pko_srv_fd);
-    pko_srv_fd = pko_cmd_setup(dst_ip, PKO_SRV_PORT, 60);
+    pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 60);
     return 0;
 }
 
 int
 cli_reset() {
     state = 0;
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    pko_reset_req(pko_cmd_fd);
-    return 0;
-}
-
-int
-cli_rmdir() {
+    pko_cmd_con(dst_ip, CMD_PORT);
+    pko_reset_req(cmd_fd);
     return 0;
 }
 
@@ -824,30 +815,242 @@ cli_verbose() {
 }
 
 int
-cli_debug() {
-    if (pko_debug()) {
-        pko_set_debug(0);
-        printf(" Debug off\n");
-    } else {
-        pko_set_debug(1);
-        printf(" Debug on\n");
-    }
-    return 0;
-}
-
-int
-cli_devlist(arg)
-    char *arg;
-{
-    return 0;
-}
-
-int
 cli_setroot(arg)
     char *arg;
 {
     pko_set_root(arg);
     return(0);
+}
+
+/*
+ * PS2 NetFS commands
+ */
+
+int
+cli_ps2copyfrom(char *arg) {
+    int fd0, fd1, size, total;
+    char frompath[MAX_PATH];
+    char topath[MAX_PATH];
+    char buffer[65536];
+    arg_get_frompath(frompath, &arg);
+    arg_get_topath(topath, &arg);
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    fd0 = open(topath, O_RDWR | O_CREAT, 0644);
+    fd1 = ps2netfs_req_open(frompath, PS2_O_RDONLY);
+    size = ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_END);
+    ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_SET);
+    printf("\n [%s --> %s]\n\n  Progress: ", frompath, topath);
+    while(size > 0) {
+        printf("#");
+        ps2netfs_req_read(fd1, buffer, sizeof(buffer));
+        if(size < sizeof(buffer)) {
+            write(fd0, buffer, size);
+        } else {
+            write(fd0, buffer, sizeof(buffer));
+        }
+        size -= sizeof(buffer);
+    }
+    ps2netfs_req_close(fd1);
+    close(fd0);
+    return 0;
+}
+
+int
+cli_ps2copyto(char *arg) {
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    return 0;
+}
+
+
+int
+cli_ps2devlist(arg)
+    char *arg;
+{
+    int numdevs, i;
+    char devlist[256];
+    char *ptr = devlist;
+
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+
+    numdevs = ps2netfs_req_devlist(devlist);
+    printf("\nDevice list.\n");
+    for(i = 0; i < numdevs; i++) {
+        printf(" dev %02d : '%s'\n", i, ptr);
+        ptr += strlen(ptr)+1;
+    }
+    return 0;
+}
+
+int
+cli_ps2dir(char *arg) {
+    int ret, fd;
+    ps2netfs_dirent_t dirent;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    printf("\nListing of: %s\n", arg);
+    ret = fd = ps2netfs_req_dopen(arg);
+    while (ret > 0) {
+        ret = ps2netfs_req_dread(fd, &dirent);
+        ps2netfs_showStat(&dirent);
+        printf(" %-20s \n", dirent.name);
+    }
+    if ( fd > 0 ) {
+        ps2netfs_req_dclose(fd);
+    }
+    printf("\n");
+    return 0;
+}
+
+int
+cli_ps2umount(char *arg) {
+    int ret;
+    char *device, *fsname;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_umount(device, 0);
+    if ( ret < 0 ) {
+        printf("unmount failed, ret = %d\n", ret);
+    } else {
+    }
+    return 0;
+}
+
+int
+cli_ps2sync(char *arg) {
+    int ret;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_sync(arg, 0);
+    return 0;
+}
+
+int
+cli_ps2rmdir(char *arg) {
+    int ret;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_rmdir(arg);
+    if ( ret < 0 ) {
+        printf("rmdir failed, ret = %d\n", ret);
+    } else {
+    }
+    return 0;
+}
+
+int
+cli_ps2format(char *arg) {
+    int ret;
+    char *device, fsname;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_format(arg, 0);
+    if ( ret < 0 ) {
+        printf("format failed, ret = %d\n", ret);
+    } else {
+    }
+    return 0;
+}
+
+int
+cli_ps2mkdir(char *arg) {
+    int ret;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_mkdir(arg);
+    if ( ret < 0 ) {
+        printf("mkdir failed, ret = %d\n", ret);
+    } else {
+        // ps2dir
+    }
+    return 0;
+}
+
+int
+cli_ps2rename(char *arg) {
+    int ret;
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    ret = ps2netfs_req_delete(arg, 0);
+    if ( ret < 0 ) {
+        printf("rename failed, %d\n", ret);
+    } else {
+    }
+    return 0;
+}
+
+int
+cli_ps2mount(char *arg) {
+    int ret;
+    char *device, fsname;
+
+    if ( ps2_netfs_fd < 0 ) {
+        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+        if ( ps2_netfs_fd < 0 ) {
+            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+            return 0;
+        }
+    }
+    arg_get_device(device, arg);
+    arg_get_fsname(fsname, arg);
+    ret = ps2netfs_req_mount(device, fsname, PS2NETFS_FIO_MT_RDWR, "", 0);
+    if ( ret < 0 ) {
+        printf("mount failed, ret = %d\n", ret);
+    } else {
+    }
+    return 0;
 }
 
 /*
@@ -965,6 +1168,10 @@ read_config(void)
         } else if (strcmp(key, "setroot") == 0) {
             if (strcmp(ptr, "") != 0) {
                 pko_set_root(ptr);
+            }
+        } else if (strcmp(key, "logprompt") == 0) {
+            if (strcmp(ptr, "") != 0) {
+                /* pko_set_root(ptr); */
             }
         } else if (strcmp(key, "home") == 0) {
             if (strcmp(ptr, "") != 0) {

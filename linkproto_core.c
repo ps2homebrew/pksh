@@ -52,12 +52,12 @@ pko_set_root(char *p) {
 }
 
 int
-pko_ps2netfs_setup(char *dst_ip, int port, int timeout) {
-    return pko_cmd_setup(dst_ip, port, timeout);
+ps2netfs_open(char *dst_ip, int port, int timeout) {
+    return cmd_listener(dst_ip, port, timeout);
 }
 
 int
-pko_log_setup(char *src_ip, int port) {
+log_listener(char *src_ip, int port) {
     int fd;
     int server_addr_size = sizeof(struct sockaddr_in);
     struct sockaddr_in server_addr;
@@ -75,7 +75,7 @@ pko_log_setup(char *src_ip, int port) {
 }
 
 int
-pko_cmd_setup(char *dst_ip, int port, int timeout) {
+cmd_listener(char *dst_ip, int port, int timeout) {
     int addr_size = sizeof(struct sockaddr_in);
     int len, flags, ret, error;
     struct sockaddr_in addr;
@@ -187,17 +187,17 @@ pko_cmd_con(char *ip, int port) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
 
-    if ((pko_cmd_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((cmd_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("socket");
         return -1;
     }
 
-    ret = connect(pko_cmd_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    ret = connect(cmd_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (ret < 0) {
         perror("Connect");
         return -1;
     }
-    return pko_cmd_fd;
+    return cmd_fd;
 }
 
 int pko_send_bytes(int s, char *buf, int bytes) {
@@ -269,7 +269,7 @@ pko_open_file(char *buf) {
     len = sizeof(pko_pkt_file_rly);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_OPEN_RLY);
+    reply->cmd = htonl(OPEN_RLY);
     reply->len = htons(len);
 
     pko_fix_path(pkt->path);
@@ -312,7 +312,7 @@ pko_open_dir(char *buf) {
     len = sizeof(pko_pkt_file_rly);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_DOPEN_RLY);
+    reply->cmd = htonl(DOPEN_RLY);
     reply->len = htons(len);
 
     pko_fix_path(pkt->path);
@@ -344,7 +344,7 @@ pko_read_dir(char *buf) {
 
     pkt = (pko_pkt_read_req *)buf;
     reply = (pko_pkt_dread_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_DREAD_RLY);
+    reply->cmd = htonl(DREAD_RLY);
     reply->len = htons(sizeof(pko_pkt_dread_rly));
     reply->ret = htonl((int)dirp = readdir((DIR *)ntohl(pkt->fd)));
     if ( dirp != 0 ) {
@@ -414,7 +414,7 @@ pko_close_dir(char *buf) {
     retval = closedir((DIR *)fd);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_DCLOSE_RLY);
+    reply->cmd = htonl(DCLOSE_RLY);
     reply->len = htons(sizeof(pko_pkt_file_rly));
     reply->retval = htonl(retval);
 
@@ -441,7 +441,7 @@ pko_close_file(char *buf)
     retval = close(fd);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_CLOSE_RLY);
+    reply->cmd = htonl(CLOSE_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
 
@@ -471,7 +471,7 @@ pko_read_file(char *buf)
         printf("read %d bytes from file desc %d\n", nbytes, fd);
 
     reply = (pko_pkt_read_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_READ_RLY);
+    reply->cmd = htonl(READ_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
 
@@ -497,7 +497,7 @@ pko_read_file(char *buf)
     }
     free(filebuf);
 #else
-    if (pkt->nbytes > PKO_MAX_READ_SEGMENT) {
+    if (pkt->nbytes > MAX_READ_SEGMENT) {
         if (DEBUG)
             printf("Gah!! Trying to read more than MAX_SEGMENT_SIZE bytes!!!\n");
         reply->nbytes = -1;
@@ -588,7 +588,7 @@ pko_write_file(char *buf) {
     } while (bytes_left > 0);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_WRITE_RLY);
+    reply->cmd = htonl(WRITE_RLY);
     reply->len = htons((unsigned short)sizeof(pko_pkt_file_rly));
     reply->retval = htonl(nbytes - bytes_left);
     send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
@@ -611,7 +611,7 @@ pko_lseek_file(char *buf) {
     retval = lseek(fd, offset, whence);
 
     reply = (pko_pkt_file_rly *)&send_packet[0];
-    reply->cmd = htonl(PKO_LSEEK_RLY);
+    reply->cmd = htonl(LSEEK_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
     if (DEBUG) {

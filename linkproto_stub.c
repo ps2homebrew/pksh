@@ -35,7 +35,7 @@ pko_dump2pc_req(int sock) {
     unsigned short len;
     pko_pkt_dump2pc_req req;
     len = sizeof(pko_pkt_dump2pc_req);
-    req.cmd = htonl(PKO_NETDUMP_CMD);
+    req.cmd = htonl(NETDUMP_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
@@ -49,7 +49,7 @@ pko_dump2screen_req(int sock) {
     unsigned short len;
     pko_pkt_dump2screen_req req;
     len = sizeof(pko_pkt_dump2screen_req);
-    req.cmd = htonl(PKO_SCRDUMP_CMD);
+    req.cmd = htonl(SCRDUMP_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
@@ -63,11 +63,11 @@ pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int size)
     unsigned short len;
     pko_pkt_dumpmem_req req;
     len = sizeof(pko_pkt_dumpmem_req);
-    req.cmd = htonl(PKO_DUMPMEM_CMD);
+    req.cmd = htonl(DUMPMEM_CMD);
     req.len = htons(len);
     req.offset = htonl(offset);
     req.size = htonl(size);
-    strncpy(req.argv, file, PKO_MAX_PATH);
+    strncpy(req.argv, file, MAX_PATH);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
 #else
@@ -80,10 +80,10 @@ pko_dumpregs_req(int sock, char *file, unsigned int regs) {
     unsigned short len;
     pko_pkt_dumpregs_req req;
     len = sizeof(pko_pkt_dumpregs_req);
-    req.cmd = htonl(PKO_DUMPREGS_CMD);
+    req.cmd = htonl(DUMPREGS_CMD);
     req.len = htons(len);
     req.regs = htonl(regs);
-    strncpy(req.argv, file, PKO_MAX_PATH);
+    strncpy(req.argv, file, MAX_PATH);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
 #else
@@ -96,7 +96,7 @@ pko_execee_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     unsigned short len;
     pko_pkt_execee_req req;
     len = sizeof(pko_pkt_execee_req);
-    req.cmd = htonl(PKO_EXECEE_CMD);
+    req.cmd = htonl(EXECEE_CMD);
     req.len = htons(len);
     req.argc = htonl(argc);
     memcpy(req.argv, argv, argvlen);
@@ -113,7 +113,7 @@ pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     unsigned short len;
     pko_pkt_execiop_req req;
     len = sizeof(pko_pkt_execiop_req);
-    req.cmd = htonl(PKO_EXECIOP_CMD);
+    req.cmd = htonl(EXECIOP_CMD);
     req.len = htons(len);
     req.argc = htonl(argc);
     memcpy(req.argv, argv, argvlen);
@@ -130,10 +130,10 @@ pko_gsexec_req(int sock, char *file, unsigned int size) {
     unsigned short len;
     pko_pkt_gsexec_req req;
     len = sizeof(pko_pkt_gsexec_req);
-    req.cmd = htonl(PKO_GSEXEC_CMD);
+    req.cmd = htonl(GSEXEC_CMD);
     req.len = htons(len);
     req.size = htons(size);
-    memcpy(req.file, file, PKO_MAX_PATH);
+    memcpy(req.file, file, MAX_PATH);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
 #else
@@ -146,7 +146,7 @@ pko_poweroff_req(int sock) {
     unsigned short len;
     pko_pkt_poweroff_req req;
     len = sizeof(pko_pkt_poweroff_req);
-    req.cmd = htonl(PKO_POWEROFF_CMD);
+    req.cmd = htonl(POWEROFF_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
@@ -160,7 +160,7 @@ pko_reset_req(int sock) {
     unsigned short len;
     pko_pkt_reset_req req;
     len = sizeof(pko_pkt_reset_req);
-    req.cmd = htonl(PKO_RESET_CMD);
+    req.cmd = htonl(RESET_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
     return send(sock, &req, len, 0);
@@ -174,7 +174,7 @@ pko_stop_vu(int sock, unsigned int vpu) {
     unsigned short len;
     pko_pkt_stopvu_req req;
     len = sizeof(pko_pkt_stopvu_req);
-    req.cmd = htonl(PKO_STOPVU_CMD);
+    req.cmd = htonl(STOPVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
 #ifndef __WIN32__
@@ -189,7 +189,7 @@ pko_start_vu(int sock, unsigned int vpu) {
     unsigned short len;
     pko_pkt_startvu_req req;
     len = sizeof(pko_pkt_startvu_req);
-    req.cmd = htonl(PKO_STARTVU_CMD);
+    req.cmd = htonl(STARTVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
 #ifndef __WIN32__
@@ -200,8 +200,8 @@ pko_start_vu(int sock, unsigned int vpu) {
 }
 
 int
-ps2link_open(char *dst) {
-	int sock, ret;
+ps2link_open(int *sock, char *dst) {
+	int ret;
     struct sockaddr_in addr;
 #ifndef __WIN32__
 	bzero((void *)&addr, sizeof(addr));
@@ -209,15 +209,13 @@ ps2link_open(char *dst) {
 	memset((void *)&addr, 0, sizeof(addr));
 #endif
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(PKO_SRV_PORT);
+	addr.sin_port = htons(SRV_PORT);
 	addr.sin_addr.s_addr = inet_addr(dst);
 	memset(&(addr.sin_zero), '\0', 8);
-	if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {
+	if((*sock = socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {
 		perror("socket");
 	}
-	if((ret = connect(sock, (struct sockaddr *)&addr,
-				sizeof(struct sockaddr_in))) < 0) {
-		perror("");
-	}
-	return sock;
+	ret = connect(*sock, (struct sockaddr *)&addr, sizeof(struct
+            sockaddr_in));
+	return ret;
 }

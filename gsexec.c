@@ -27,65 +27,73 @@
  *
  */
 
+#include "linkproto_core.h"
 #include "linkproto_stub.h"
 #include "common.h"
+#include "batch.h"
 
-#ifdef __WIN32__
-#include <direct.h>
-#endif
+char dst_ip[16];
+char *local_ip = "127.0.0.1";
 
 int
 main(int argc, char **argv)
 {
-    int sock, ret, i;
-    struct sockaddr_in addr;
-    unsigned char file[PKO_MAX_PATH];
-    memset(file, 0, PKO_MAX_PATH);
+    fd_set master_set;
+    int sock, ret, local, size;
+    unsigned char file[MAX_PATH];
+    char *dst_ip = "127.0.0.2";
+    char *end_ptr;
+    char ch;
+    memset(file, 0, MAX_PATH);
 
-    if (argc < 2) {
+    if (argc < 1) {
         printf("Usage:\n"
-               " %s <EE elf> arg1 .. argN\n\n", argv[0]);
+               " %s <file>\n\n", argv[0]);
         return 0;
     }
 
-#ifndef __WIN32__
-    bzero((void *)&addr, sizeof(addr));
-#else
-    memset((void *)&addr, 0, sizeof(addr));
-#endif
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(PKO_SRV_PORT);
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    memset(&(addr.sin_zero), '\0', 8);
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {
-        perror("socket");
+    while((ch = getopt(argc, argv, "h:")) != -1 ) {
+        switch((char)ch) {
+            case 'h':
+                strncpy(dst_ip, optarg, 16);
+                break;
+            default:
+                /* usage(); */
+                break;
+        }
     }
-    if((ret = connect(sock, (struct sockaddr *)&addr,
-                sizeof(struct sockaddr_in))) < 0) {
-        perror("");
-    }
-    // if we have device its most likely a full path
-    if ( !arg_device_check(argv[1]) ) {
-#ifndef __WIN32__
-        strcpy(file, getcwd(NULL, 0));
-#else
-        strcpy(file, _getcwd(NULL, 0));
-#endif
-        strcat(file, "/");
-        strcat(file, argv[1]);
+
+    // check if pksh is running, if so use it
+    if ( (sock = ps2link_open(&sock, local_ip)) < 0 ) {
+        // do we have an alternative ip ?
+        sock = ps2link_open(&sock, dst_ip);
+        printf("Connectede to %s ps2link server\n", dst_ip);
+        local = 0;
     } else {
-        strcpy(file, argv[1]);
+        local = 1;
+        printf("Connected to local ps2link server ( pksh )\n");
     }
 
-    // prepend arguments
-    for ( i = 2; i < argc; i++ ) {
-        strcat(file, " ");
-        strcat(file, argv[i]);
+    // if we have device its most likely a full path
+    if ( !arg_device_check(argv[optind]) ) {
+        strcpy(file, getcwd(NULL, 0));
+        strcat(file, "/");
+        strcat(file, argv[optind]);
+    } else {
+        strcpy(file, argv[optind]);
     }
+    optind++;
 
-    ret = pko_execee_req(sock, file, strlen(file), 1);
+    size = (unsigned int)strtol(argv[optind], &end_ptr, 0);
+    if ( argv[optind] == end_ptr ) {
+		printf("size is not a valid number\n");
+		/* usage(); */
+		return 0;
+    } 
+
+    ret = pko_gsexec_req(sock, file, size);
     if (ret < 0) {
-        printf("Sending execee req failed\n");
+        printf("Sending gsexec request failed\n");
     }
     return 0;
 }

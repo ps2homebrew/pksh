@@ -46,35 +46,35 @@
 #include <winsock.h>
 #endif
 
-#define PKO_SRV_PORT    0x4711
-#define PKO_CMD_PORT    0x4712
-#define PKO_LOG_PORT    0x4712
+#define SRV_PORT    0x4711
+#define CMD_PORT    0x4712
+#define LOG_PORT    0x4712
 
-#define PKO_OPEN_CMD    0xbabe0111
-#define PKO_OPEN_RLY    0xbabe0112
-#define PKO_CLOSE_CMD   0xbabe0121
-#define PKO_CLOSE_RLY   0xbabe0122
-#define PKO_READ_CMD    0xbabe0131
-#define PKO_READ_RLY    0xbabe0132
-#define PKO_WRITE_CMD   0xbabe0141
-#define PKO_WRITE_RLY   0xbabe0142
-#define PKO_LSEEK_CMD   0xbabe0151
-#define PKO_LSEEK_RLY   0xbabe0152
+#define OPEN_CMD    0xbabe0111
+#define OPEN_RLY    0xbabe0112
+#define CLOSE_CMD   0xbabe0121
+#define CLOSE_RLY   0xbabe0122
+#define READ_CMD    0xbabe0131
+#define READ_RLY    0xbabe0132
+#define WRITE_CMD   0xbabe0141
+#define WRITE_RLY   0xbabe0142
+#define LSEEK_CMD   0xbabe0151
+#define LSEEK_RLY   0xbabe0152
 
-#define PKO_RESET_CMD       0xbabe0201
-#define PKO_EXECIOP_CMD     0xbabe0202
-#define PKO_EXECEE_CMD      0xbabe0203
-#define PKO_POWEROFF_CMD    0xbabe0204
-#define PKO_SCRDUMP_CMD     0xbabe0205
-#define PKO_NETDUMP_CMD     0xbabe0206
+#define RESET_CMD       0xbabe0201
+#define EXECIOP_CMD     0xbabe0202
+#define EXECEE_CMD      0xbabe0203
+#define POWEROFF_CMD    0xbabe0204
+#define SCRDUMP_CMD     0xbabe0205
+#define NETDUMP_CMD     0xbabe0206
 
-#define PKO_DUMPMEM_CMD     0xbabe0207
-#define PKO_STARTVU_CMD     0xbabe0208
-#define PKO_STOPVU_CMD      0xbabe0209
-#define PKO_DUMPREGS_CMD    0xbabe020a
-#define PKO_GSEXEC_CMD      0xbabe020b
+#define DUMPMEM_CMD     0xbabe0207
+#define STARTVU_CMD     0xbabe0208
+#define STOPVU_CMD      0xbabe0209
+#define DUMPREGS_CMD    0xbabe020a
+#define GSEXEC_CMD      0xbabe020b
 
-#define PKO_MAX_PATH    256
+#define MAX_PATH    256
 #define PACKET_MAXSIZE  4096
 #define PS2_O_RDONLY	0x0001
 #define PS2_O_WRONLY	0x0002
@@ -150,7 +150,7 @@ int pko_start_vu(int sock, unsigned int vpu);
 /*! Tries to connect to a ps2link server
  * @param dst the ip address
  */
-int ps2link_open(char *dst);
+int ps2link_open(int *sock, char *dst);
 
 // packet types
 typedef struct
@@ -164,7 +164,7 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     int  argc;
-    char argv[PKO_MAX_PATH];
+    char argv[MAX_PATH];
 } pko_pkt_execee_req;
 
 typedef struct
@@ -172,7 +172,7 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     unsigned short size;
-    unsigned char file[PKO_MAX_PATH];
+    unsigned char file[MAX_PATH];
 } pko_pkt_gsexec_req;
 
 typedef struct
@@ -180,7 +180,7 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     int  argc;
-    char argv[PKO_MAX_PATH];
+    char argv[MAX_PATH];
 } pko_pkt_execiop_req;
 
 typedef struct
@@ -207,7 +207,7 @@ typedef struct
     unsigned short len;
     unsigned int offset;
     unsigned int size;
-    char argv[PKO_MAX_PATH];
+    char argv[MAX_PATH];
 } pko_pkt_dumpmem_req;
 
 typedef struct
@@ -229,5 +229,5 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     unsigned int regs;
-    char argv[PKO_MAX_PATH];
+    char argv[MAX_PATH];
 } pko_pkt_dumpregs_req;

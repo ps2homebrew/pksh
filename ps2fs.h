@@ -11,14 +11,12 @@
  * distribution for licensing terms.
  */
 
-/** \defgroup ps2netfs ps2netfs - TCP fs driver*/ 
-
 #ifndef _PS2FS_H_
 #define _PS2FS_H_
 
 #define PS2NETFS_LISTEN_PORT  0x4713
 
-//from iomanx, all operations
+// from iomanx, all operations
 //  open
 #define PS2NETFS_OPEN_CMD     0xbeef8011
 #define PS2NETFS_OPEN_RLY     0xbeef8012
@@ -252,5 +250,54 @@ typedef struct
     int retval;
     char path[PS2NETFS_MAX_PATH];
 } __attribute__((packed)) ps2netfs_pkt_readlink_rly;
+
+// File open flags
+#define PS2NETFS_O_RDONLY	0x0001
+#define PS2NETFS_O_WRONLY	0x0002
+#define PS2NETFS_O_RDWR		0x0003
+#define PS2NETFS_O_DIROPEN	0x0008	// Internal use for dopen
+#define PS2NETFS_O_NBLOCK	0x0010
+#define PS2NETFS_O_APPEND	0x0100
+#define PS2NETFS_O_CREAT		0x0200
+#define PS2NETFS_O_TRUNC		0x0400
+
+// Access flags for filesystem mount
+#define PS2NETFS_FIO_MT_RDWR			0x00
+#define PS2NETFS_FIO_MT_RDONLY		0x01
+
+#define PS2NETFS_SEEK_SET	0
+#define PS2NETFS_SEEK_CUR	1
+#define PS2NETFS_SEEK_END	2
+
+// These are ps2 mode flags, for dirent mode
+// File mode flags
+#define FIO_S_IFMT		0xF000		// Format mask
+#define FIO_S_IFLNK		0x4000		// Symbolic link
+#define FIO_S_IFREG		0x2000		// Regular file
+#define FIO_S_IFDIR		0x1000		// Directory
+
+// Access rights
+#define FIO_S_ISUID		0x0800		// SUID
+#define FIO_S_ISGID		0x0400		// SGID
+#define FIO_S_ISVTX		0x0200		// Sticky bit
+
+#define FIO_S_IRWXU		0x01C0		// User access rights mask
+#define FIO_S_IRUSR		0x0100		// read
+#define FIO_S_IWUSR		0x0080		// write
+#define FIO_S_IXUSR		0x0040		// execute
+
+#define FIO_S_IRWXG		0x0038		// Group access rights mask
+#define FIO_S_IRGRP		0x0020		// read
+#define FIO_S_IWGRP		0x0010		// write
+#define FIO_S_IXGRP		0x0008		// execute
+
+#define FIO_S_IRWXO		0x0007		// Others access rights mask
+#define FIO_S_IROTH		0x0004		// read
+#define FIO_S_IWOTH		0x0002		// write
+#define FIO_S_IXOTH		0x0001		// execute
+
+#define FIO_LSEEK_SET   0x0000
+#define FIO_LSEEK_CURRENT 0x0001
+#define FIO_LSEEK_END   0x0002
 
 #endif

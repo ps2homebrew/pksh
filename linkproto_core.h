@@ -47,28 +47,28 @@
 #include "common.h"
 #include "list.h"
 
-#define PKO_SRV_PORT    0x4711
-#define PKO_CMD_PORT    0x4712
-#define PKO_LOG_PORT    0x4712
+#define SRV_PORT    0x4711
+#define CMD_PORT    0x4712
+#define LOG_PORT    0x4712
 
-#define PKO_OPEN_CMD    0xbabe0111
-#define PKO_OPEN_RLY    0xbabe0112
-#define PKO_CLOSE_CMD   0xbabe0121
-#define PKO_CLOSE_RLY   0xbabe0122
-#define PKO_READ_CMD    0xbabe0131
-#define PKO_READ_RLY    0xbabe0132
-#define PKO_WRITE_CMD   0xbabe0141
-#define PKO_WRITE_RLY   0xbabe0142
-#define PKO_LSEEK_CMD   0xbabe0151
-#define PKO_LSEEK_RLY   0xbabe0152
-#define PKO_DOPEN_CMD   0xbabe0161
-#define PKO_DOPEN_RLY   0xbabe0162
-#define PKO_DCLOSE_CMD  0xbabe0171
-#define PKO_DCLOSE_RLY  0xbabe0172
-#define PKO_DREAD_CMD   0xbabe0181
-#define PKO_DREAD_RLY   0xbabe0182
+#define OPEN_CMD    0xbabe0111
+#define OPEN_RLY    0xbabe0112
+#define CLOSE_CMD   0xbabe0121
+#define CLOSE_RLY   0xbabe0122
+#define READ_CMD    0xbabe0131
+#define READ_RLY    0xbabe0132
+#define WRITE_CMD   0xbabe0141
+#define WRITE_RLY   0xbabe0142
+#define LSEEK_CMD   0xbabe0151
+#define LSEEK_RLY   0xbabe0152
+#define DOPEN_CMD   0xbabe0161
+#define DOPEN_RLY   0xbabe0162
+#define DCLOSE_CMD  0xbabe0171
+#define DCLOSE_RLY  0xbabe0172
+#define DREAD_CMD   0xbabe0181
+#define DREAD_RLY   0xbabe0182
 
-#define PKO_MAX_PATH    256
+#define MAX_PATH    256
 #define PACKET_MAXSIZE  4096
 #define PS2_O_RDONLY	0x0001
 #define PS2_O_WRONLY	0x0002
@@ -85,9 +85,8 @@ char recv_packet[PACKET_MAXSIZE] __attribute__((aligned(16)));
 
 int pko_srv_fd;
 int pksh_srv_fd;
-int pko_cmd_fd;
-int pko_log_fd;
-int ps2_netfs_fd;
+int cmd_fd;
+int log_fd;
 
 /*! Function for reading data from clients and ps2link
  * @param s The socket to connect to
@@ -115,14 +114,14 @@ int pko_cmd_con(char *ip, int port);
  * @param timeout number of seconds before we time out.
  * @return filedescriptor or -1 upon failure.
  */
-int pko_ps2netfs_setup(char *dst_ip, int port, int timeout);
+int ps2netfs_open(char *dst_ip, int port, int timeout);
 /*! Function for establishing a command listener.
  * @param dst_ip a char pointer to ipaddress
  * @param port command port
  * @param timeout number of seconds before we time out.
  * @return filedescriptor or -1 upon failure.
  */
-int pko_cmd_setup(char *dst_ip, int port, int timeout);
+int cmd_listener(char *dst_ip, int port, int timeout);
 /*! Function for accepting commands from clients
  * @param src_ip The socket to connect to.
  * @param port port to bind to.
@@ -176,7 +175,7 @@ int pko_lseek_file(char *buf);
  * @param port Port number to bind to.
  * @return filedescriptor or -1 upon failure.
  */
-int pko_log_setup(char *src_ip, int port);
+int log_listener(char *src_ip, int port);
 /*! Function to fix file mode flags
  * @param flags file mode flags to fix.
  * @return filedescriptor or -1 upon failure.
@@ -208,7 +207,7 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     int flags;
-    char path[PKO_MAX_PATH];
+    char path[MAX_PATH];
 } pko_pkt_open_req;
 
 typedef struct
@@ -263,7 +262,7 @@ typedef struct
     unsigned char atime[8];
     unsigned char mtime[8];
     unsigned int hisize;
-    char path[PKO_MAX_PATH];
+    char path[MAX_PATH];
 } pko_pkt_dread_rly;
 
 typedef struct
@@ -271,5 +270,5 @@ typedef struct
     unsigned int cmd;
     unsigned short len;
     int flags;
-    char path[PKO_MAX_PATH];
+    char path[MAX_PATH];
 } pko_pkt_dclose_rly;

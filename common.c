@@ -224,7 +224,7 @@ is_file(char *file) {
 }
 
 int
-argv_split(char *argv, const char *path) {
+tokenize(char *argv, const char *path) {
 	int ai;
 	int pi;
 	int argc;
@@ -254,4 +254,29 @@ argv_split(char *argv, const char *path) {
 		}
 	}
 	return argc;
+}
+
+void
+arg_get_device(char *device, char *arg) {
+}
+
+void
+arg_get_fsname(char *fsname, char *arg) {
+}
+void
+arg_get_topath(char *topath, char *arg) {
+}
+void
+arg_get_frompath(char *frompath, char *arg) {
+}
+
+int
+get_register_index(char *str, int size) {
+	int i;
+    for(i = 0; i < DUMP_REG_MAX; i++) {
+        if(!strncmp(str, DUMP_REG_SYM[i], size) ) {
+            break;
+        }
+    }
+	return i;
 }
