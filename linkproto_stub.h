@@ -147,6 +147,10 @@ int pko_stop_vu(int sock, unsigned int vpu);
  * @param vpu 0 for VPU0 and 1 for VPU1
  */
 int pko_start_vu(int sock, unsigned int vpu);
+/*! Tries to connect to a ps2link server
+ * @param dst the ip address
+ */
+int ps2link_open(char *dst);
 
 // packet types
 typedef struct

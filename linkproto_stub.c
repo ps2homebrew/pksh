@@ -198,3 +198,26 @@ pko_start_vu(int sock, unsigned int vpu) {
     return send(sock, (const char *)&req, len, 0);
 #endif
 }
+
+int
+ps2link_open(char *dst) {
+	int sock, ret;
+    struct sockaddr_in addr;
+#ifndef __WIN32__
+	bzero((void *)&addr, sizeof(addr));
+#else
+	memset((void *)&addr, 0, sizeof(addr));
+#endif
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(PKO_SRV_PORT);
+	addr.sin_addr.s_addr = inet_addr(dst);
+	memset(&(addr.sin_zero), '\0', 8);
+	if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1 ) {
+		perror("socket");
+	}
+	if((ret = connect(sock, (struct sockaddr *)&addr,
+				sizeof(struct sockaddr_in))) < 0) {
+		perror("");
+	}
+	return sock;
+}
