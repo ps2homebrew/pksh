@@ -36,7 +36,7 @@ main(int argc, char **argv)
     int sock, ret, i;
     struct sockaddr_in addr;
     unsigned char file[PKO_MAX_PATH];
-    memset(file, 0, PKO_SRV_PORT);
+    memset(file, 0, PKO_MAX_PATH);
 
     if (argc < 2) {
         printf("Usage:\n"
