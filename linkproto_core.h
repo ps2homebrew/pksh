@@ -79,20 +79,77 @@ int pko_srv_fd;
 int pksh_srv_fd;
 int pko_cmd_fd;
 int pko_log_fd;
-// function declarations
-int pko_recv_bytes(int, char *, int);
-int pko_send_bytes(int, char *, int);
-int pko_cmd_con(char *, int);
+
+/*! Function for reading data from clients and ps2link
+ * @param sock The socket to connect to
+ * @param buf Pointer for data
+ * @param bytes Number of bytes to read
+ * @return Number of bytes received
+ */
+int pko_recv_bytes(int s, char *buf, int bytes);
+/*! Function for sending data to ps2link
+ * @param sock The socket to connect to
+ * @param buf Pointer for data
+ * @param bytes Number of bytes to send
+ * @return Number of bytes sent
+ */
+int pko_send_bytes(int s, char *buf, int bytes);
+/*! Function for establishing a command sender ( will be removed )
+ * @param ip a char pointer to ipaddress
+ * @param port command port
+ * @return filedescriptor or -1 upon failure.
+ */
+int pko_cmd_con(char *ip, int port);
+/*! Function for establishing a command listener.
+ * @param ip a char pointer to ipaddress
+ * @param port command port
+ * @return filedescriptor or -1 upon failure.
+ */
 int pko_cmd_setup(char *dst_ip, int port, int timeout);
-int pko_srv_setup(char *, int);
+/*! Function for accepting commands from clients
+ * @param ip The socket to connect to
+ * @param buf Pointer for data
+ * @param bytes Number of bytes to send
+ * @return Number of bytes sent
+ */
+int pko_srv_setup(char *src_ip, int port);
 void fileio();
 int pko_debug(void);
+/*! Function for replying on file open request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
 int pko_open_file(char *buf);
+/*! Function for replying on file close request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
 int pko_close_file(char *buf);
+/*! Function for replying on file read request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
 int pko_read_file(char *buf);
+/*! Function for replying on file write request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
 int pko_write_file(char *buf);
+/*! Function for replying on file lseek request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
 int pko_lseek_file(char *buf);
-int pko_log_setup(char *, int);
+/*! Function for setting up a log listener
+ * @param src_ip Pointer for local ip that we should bind to.
+ * @param port Port number to bind to.
+ * @return filedescriptor or -1 upon failure.
+ */
+int pko_log_setup(char *src_ip, int port);
+/*! Function for replying on file open request
+ * @param buf Pointer for request data
+ * @return filedescriptor or -1 upon failure.
+ */
 int pko_fix_flags(int flags);
 void pko_set_debug(int);
 void pko_set_root(char *);

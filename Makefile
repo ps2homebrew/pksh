@@ -60,3 +60,6 @@ zip:
 
 clean:
 	$(RM) *.o *.so
+
+docs:
+	doxygen doxy.conf
