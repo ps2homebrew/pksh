@@ -29,7 +29,7 @@ pksh:
     log <file>          	log all debug output to <file>                 
     ls,list             	well hum list files.
 
-    dump [screen]/[console] tells pukklink to dump exception to screen/console
+    exception [screen]/[console] tells pukklink to dump exception to screen/console
     dumpmem [file] [offset] [size]
     dumpreg [file] [type]
 
