@@ -32,6 +32,7 @@
 
 static llist path_list;
 static int DEBUG;
+static DIR *dirptr_a[256];
 
 void
 pko_set_debug(int level) {
@@ -246,6 +247,9 @@ pko_recv_bytes(int s, char *buf, int bytes) {
     return bytes;
 }
 
+/*
+ * File IO commands
+ */
 int
 pko_open_file(char *buf) {
     unsigned short len;
@@ -291,6 +295,140 @@ pko_open_file(char *buf) {
     }
 
     send(pko_srv_fd, reply, len, 0);
+    return 0;
+}
+
+int
+pko_open_dir(char *buf) {
+    unsigned short len;
+    DIR *dirp;
+    pko_pkt_open_req *pkt;
+    pko_pkt_file_rly *reply;
+    pkt = (pko_pkt_open_req *)buf;
+    len = sizeof(pko_pkt_file_rly);
+
+    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply->cmd = htonl(PKO_DOPEN_RLY);
+    reply->len = htons(len);
+
+    pko_fix_path(pkt->path);
+    if (DEBUG) {
+        printf("open dir %s\n", pkt->path);
+    }
+
+    if ((dirp = opendir(pkt->path)) == NULL) {
+        return -1;
+    }
+
+    reply->retval = htonl(dirfd(dirp));
+
+    if (DEBUG) {
+        printf("got fd %d\n", dirfd(dirp));
+    }
+
+    send(pko_srv_fd, reply, len, 0);
+    return 0;
+}
+
+int
+pko_read_dir(char *buf) {
+    struct stat st;
+    struct tm loctime;
+    struct dirent *dirp;
+    pko_pkt_read_req *pkt;
+    pko_pkt_dread_rly *reply;
+
+    pkt = (pko_pkt_read_req *)buf;
+    reply = (pko_pkt_dread_rly *)&send_packet[0];
+    reply->cmd = htonl(PKO_DREAD_RLY);
+    reply->len = htons(sizeof(pko_pkt_dread_rly));
+    printf("reading from fd %d\n", ntohl(pkt->fd));
+    readdir( (DIR *)ntohl(pkt->fd) );
+    printf("apa\n");
+    if ( (dirp = readdir((DIR *)ntohl(pkt->fd))) == 0 ) {
+        return -1;
+    }
+    printf("stat\n");
+    stat(dirp->d_name, &st);
+
+    printf(".\n");
+    // add attributes
+    reply->attr = htonl(0);
+
+    printf(".\n");
+    // mode
+    reply->size = htonl(st.st_size);
+    printf(".\n");
+    reply->mode = (st.st_mode & 0x07);
+    printf(".\n");
+    if (S_ISDIR(st.st_mode)) { reply->mode |= 0x20; }
+    if (S_ISLNK(st.st_mode)) { reply->mode |= 0x08; }
+    if (S_ISREG(st.st_mode)) { reply->mode |= 0x10; }
+    // size
+    reply->mode = htonl(reply->mode);
+    
+    printf(".\n");
+    // add time
+    if (localtime_r(&(st.st_ctime), &loctime)) {
+        reply->ctime[6] = loctime.tm_year;
+        reply->ctime[5] = loctime.tm_mon + 1;
+        reply->ctime[4] = loctime.tm_mday;
+        reply->ctime[3] = loctime.tm_hour;
+        reply->ctime[2] = loctime.tm_min;
+        reply->ctime[1] = loctime.tm_sec;
+    }
+
+    printf(".\n");
+    if (localtime_r(&(st.st_atime), &loctime)) {
+        reply->atime[6] = loctime.tm_year;
+        reply->atime[5] = loctime.tm_mon + 1;
+        reply->atime[4] = loctime.tm_mday;
+        reply->atime[3] = loctime.tm_hour;
+        reply->atime[2] = loctime.tm_min;
+        reply->atime[1] = loctime.tm_sec;
+    }
+
+    printf(".\n");
+    if (localtime_r(&(st.st_mtime), &loctime)) {
+        reply->mtime[6] = loctime.tm_year;
+        reply->mtime[5] = loctime.tm_mon + 1;
+        reply->mtime[4] = loctime.tm_mday;
+        reply->mtime[3] = loctime.tm_hour;
+        reply->mtime[2] = loctime.tm_min;
+        reply->mtime[1] = loctime.tm_sec;
+    }
+
+    printf(".\n");
+    reply->hisize = htonl(0);
+    printf(".\n");
+    strncpy(reply->path, dirp->d_name, 256);
+
+    printf(".\n");
+    send(pko_srv_fd, reply, sizeof(reply), 0);
+    return 0;
+}
+
+int
+pko_close_dir(char *buf) {
+    int retval;
+    int fd;
+    pko_pkt_close_req *pkt;
+    pko_pkt_file_rly *reply;
+
+    pkt = (pko_pkt_close_req *)buf;
+    fd = ntohl(pkt->fd);
+
+    if (DEBUG)
+        printf("close filedesc %d\n", fd);
+
+    retval = closedir((DIR *)fd);
+
+    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply->cmd = htonl(PKO_DCLOSE_RLY);
+    reply->len = htons(sizeof(pko_pkt_file_rly));
+    reply->retval = htonl(retval);
+
+    send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
     return 0;
 }
 
@@ -494,6 +632,9 @@ pko_lseek_file(char *buf) {
     return 0;
 }
 
+/*
+ * Misc helpers
+ */
 void
 pko_set_path(llist ptr) {
     path_list = ptr;
@@ -507,6 +648,9 @@ pko_get_path(void) {
 void
 pko_fix_path(char *a) {
     char c;
+    if (a[0] == 0) {
+        strcpy(a, ".");
+    }
     /* Convert DOS-style '\' to '/' */
     while ((c = *a++) != '\0') {
         if(c == '\\') {

@@ -30,7 +30,7 @@ CFLAGS += -Wchar-subscripts -Wformat-security
 all: pksh npsh execee execiop reset
 
 pksh: $(PKSH_OBJ)
-	$(CC) $(PKSH_OBJ) -o $@ $(LIBS) $(INC)
+	$(CC) -g $(PKSH_OBJ) -o $@ $(LIBS) $(INC)
 
 execee: common.o linkproto_stub.o execee.o
 	$(CC) common.o linkproto_stub.o execee.o -o $@

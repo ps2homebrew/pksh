@@ -36,6 +36,7 @@ main(int argc, char **argv)
     int sock, ret, i;
     struct sockaddr_in addr;
     unsigned char file[PKO_MAX_PATH];
+    memset(file, 0, PKO_SRV_PORT);
 
     if (argc < 2) {
         printf("Usage:\n"
@@ -58,7 +59,7 @@ main(int argc, char **argv)
     }
 
     if ( !arg_device_check(argv[1]) ) {
-        strcat(file, getcwd(NULL, 0));
+        strcpy(file, getcwd(NULL, 0));
         strcat(file, "/");
         strcat(file, argv[1]);
     } else {

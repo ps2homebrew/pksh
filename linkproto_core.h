@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <dirent.h>
 
 #include "common.h"
 #include "list.h"
@@ -59,6 +60,12 @@
 #define PKO_WRITE_RLY   0xbabe0142
 #define PKO_LSEEK_CMD   0xbabe0151
 #define PKO_LSEEK_RLY   0xbabe0152
+#define PKO_DOPEN_CMD   0xbabe0161
+#define PKO_DOPEN_RLY   0xbabe0162
+#define PKO_DCLOSE_CMD  0xbabe0171
+#define PKO_DCLOSE_RLY  0xbabe0172
+#define PKO_DREAD_CMD   0xbabe0181
+#define PKO_DREAD_RLY   0xbabe0182
 
 #define PKO_MAX_PATH    256
 #define PACKET_MAXSIZE  4096
@@ -120,16 +127,31 @@ int pko_debug(void);
  * @return 0 on Success.
  */
 int pko_open_file(char *buf);
+/*! Function for replying on dir open request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
+int pko_open_dir(char *buf);
 /*! Function for replying on file close request
  * @param buf Pointer for request data
  * @return 0 on Success.
  */
 int pko_close_file(char *buf);
+/*! Function for replying on dir close request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
+int pko_close_dir(char *buf);
 /*! Function for replying on file read request
  * @param buf Pointer for request data
  * @return 0 on Success.
  */
 int pko_read_file(char *buf);
+/*! Function for replying on dir read request
+ * @param buf Pointer for request data
+ * @return 0 on Success.
+ */
+int pko_read_dir(char *buf);
 /*! Function for replying on file write request
  * @param buf Pointer for request data
  * @return 0 on Success.
@@ -219,3 +241,26 @@ typedef struct
     int offset;
     int whence;
 } pko_pkt_lseek_req;
+
+typedef struct
+{
+    unsigned int cmd;
+    unsigned int len;
+    int flags;
+    unsigned int mode;
+    unsigned int attr;
+    unsigned int size;
+    unsigned char ctime[8];
+    unsigned char atime[8];
+    unsigned char mtime[8];
+    unsigned int hisize;
+    char path[PKO_MAX_PATH];
+} pko_pkt_dread_rly;
+
+typedef struct
+{
+    unsigned int cmd;
+    unsigned int len;
+    int flags;
+    char path[PKO_MAX_PATH];
+} pko_pkt_dclose_rly;
