@@ -224,10 +224,11 @@ is_file(char *file) {
 }
 
 int
-tokenize(char *argv, const char *path) {
+tokenize(char *argv[], const char *path) {
 	int ai;
 	int pi;
 	int argc;
+    int i;
 
 	argc = 0;
 	if ((path == NULL) || (strlen(path) == 0)) {
@@ -237,21 +238,24 @@ tokenize(char *argv, const char *path) {
 
 	ai = 0;
 	pi = 0;
+    i = 0;
 	while (path[pi]) {
+        argv[i] = malloc(256);
 		while ((path[pi] != '\0') &&
 			(path[pi] != ' ')) {
-			argv[ai] =
+			argv[i][ai] =
 				path[pi];
 			ai++;
 			pi++;
 		}
-		argv[ai] = '\0';
+		argv[i][ai] = '\0';
 		ai++;
 		argc++;
 
 		while ((path[pi]) && (path[pi] == ' ')) {
 			pi++;
 		}
+        i++;
 	}
 	return argc;
 }
@@ -270,27 +274,16 @@ split_filename(char *device, char *dir, char *filename, const char *arg) {
             strncpy(device, arg, ptr-arg+1);
             device[ptr-arg+1] = NULL;
         }
+        ptr++;
     } else {
         device[0] = NULL;
+        ptr = arg;
     }
+    // check for dir part
 
-    // check for last filename part
-
+    // check for filename part
+    strncpy(filename, ptr, MAXPATHLEN);
     return;
-}
-
-void
-arg_get_device(char *device, char *arg) {
-}
-
-void
-arg_get_fsname(char *fsname, char *arg) {
-}
-void
-arg_get_topath(char *topath, char *arg) {
-}
-void
-arg_get_frompath(char *frompath, char *arg) {
 }
 
 int
@@ -302,4 +295,35 @@ get_register_index(char *str, int size) {
         }
     }
 	return i;
+}
+
+int
+build_argv(char *argv[], char *arg) {
+    int i, ai;
+    char *aptr = arg;
+
+	if ((arg == NULL) || (strlen(arg) == 0)) {
+		strcpy(argv, "");
+		return 0;
+	}
+
+    for(i = 0; i < MAX_ARGV; i++) {
+        ai = 0;
+		while ((aptr[ai] != '\0') && (aptr[ai] != ' ')) {
+			ai++;
+		}
+
+        argv[i] = malloc(ai);
+        strncpy(argv[i], aptr, ai);
+        argv[i][ai] = 0;
+        aptr = aptr + ai;
+
+        while (aptr[0] == ' ') {
+            aptr++;
+        }
+        if(aptr[0] == '\0') {
+            break;
+        }
+    }
+    return i+1;
 }

@@ -187,11 +187,11 @@ main(int argc, char* argv[])
             }
         }
 
-        if( (prompt == 0) && (count > MAX_NO_PROMPT_COUNT)) {
-            rl_forced_update_display();
-            count = 0;
-            prompt = 1;
-        }
+        /* if( (prompt == 0) && (count > MAX_NO_PROMPT_COUNT)) { */
+        /*     rl_forced_update_display(); */
+        /*     count = 0; */
+        /*     prompt = 1; */
+        /* } */
         count++;
     }
 
@@ -252,9 +252,9 @@ pko_srv_read(int fd) {
     int ret = 0;
     unsigned int cmd;
     unsigned short hlen;
-    pko_pkt_hdr *header;
+    pkt_hdr *header;
     
-    length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pko_pkt_hdr));
+    length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pkt_hdr));
     if ( length < 0 ) {
         return length;
     } else if ( length == 0 ) {
@@ -277,11 +277,11 @@ pko_srv_read(int fd) {
             fprintf(stdout, "\n");
         prompt = 0;
 
-        header = (pko_pkt_hdr *)&recv_packet[0];
+        header = (pkt_hdr *)&recv_packet[0];
         cmd = ntohl(header->cmd);
         hlen = ntohs(header->len);
         ret = pko_recv_bytes(fd, &recv_packet[length],
-            hlen - sizeof(pko_pkt_hdr));
+            hlen - sizeof(pkt_hdr));
 
         switch (cmd) {
             case OPEN_CMD:
@@ -320,46 +320,46 @@ pko_srv_read(int fd) {
                 break;
             case DUMPMEM_CMD:
                 dumpmem( 
-                    ((pko_pkt_dumpmem_req*)
+                    ((pkt_dumpmem_req*)
                         &recv_packet[0])->argv,
-                    (unsigned int)ntohl(((pko_pkt_dumpmem_req*)
+                    (unsigned int)ntohl(((pkt_dumpmem_req*)
                             &recv_packet[0])->offset),
-                    (unsigned int)ntohl(((pko_pkt_dumpmem_req*)
+                    (unsigned int)ntohl(((pkt_dumpmem_req*)
                             &recv_packet[0])->size)
                     );
                 break;
             case DUMPREGS_CMD:
                 dumpregs(
-                    ((pko_pkt_dumpregs_req*)&recv_packet[0])->argv,
-                    ntohl(((pko_pkt_dumpregs_req*)&recv_packet[0])->regs)
+                    ((pkt_dumpregs_req*)&recv_packet[0])->argv,
+                    ntohl(((pkt_dumpregs_req*)&recv_packet[0])->regs)
                     );
                 break;
             case GSEXEC_CMD:
                 cli_gsexec(
-                    ((pko_pkt_gsexec_req*)&recv_packet[0])->file
+                    ((pkt_gsexec_req*)&recv_packet[0])->file
                     );
             case STOPVU_CMD:
                 pko_cmd_con(dst_ip, CMD_PORT);
                 pko_stop_vu(cmd_fd, 
-                    ntohs(((pko_pkt_stopvu_req *)
+                    ntohs(((pkt_stopvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
             case STARTVU_CMD:
                 pko_cmd_con(dst_ip, CMD_PORT);
                 pko_start_vu(cmd_fd, 
-                    ntohs(((pko_pkt_startvu_req *)
+                    ntohs(((pkt_startvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
             case EXECEE_CMD:
                 cli_execee(
-                    ((pko_pkt_execee_req *)&recv_packet[0])->argv
+                    ((pkt_execee_req *)&recv_packet[0])->argv
                     );
                 break;
             case EXECIOP_CMD:
                 cli_execeiop(
-                    ((pko_pkt_execiop_req*)&recv_packet[0])->argv
+                    ((pkt_execiop_req*)&recv_packet[0])->argv
                     );
                 break;
             case RESET_CMD:
@@ -441,7 +441,7 @@ cli_list(arg)
     if (!arg)
         arg = "";
 
-    split_filename(&device, &dir, filename, arg);
+    split_filename(device, dir, filename, arg);
     if(device[0] != NULL) {
         ps2netfs_dirent_t dirent;
         if ( ps2_netfs_fd < 0 ) {
@@ -455,8 +455,7 @@ cli_list(arg)
         if ( ret > 0 ) {
             printf("[%s]\n", arg);
         }
-        while (ret > 0) {
-            ret = ps2netfs_req_dread(fd, &dirent);
+        while((ps2netfs_req_dread(fd, &dirent)) > 0) {
             ps2netfs_showStat(&dirent);
             printf(" %-20s \n", dirent.name);
         }
@@ -625,7 +624,7 @@ cli_dumpregs(arg)
         return -1;
     }
 
-    regs = get_register_index(&ptr+1, ptr-arg);
+    regs = get_register_index(ptr+1, ptr-arg);
     ret = dumpregs(file, regs);
     if ( ret < 0) {
         perror(" dumpregs failed");
@@ -807,6 +806,7 @@ cli_reset() {
     state = 0;
     pko_cmd_con(dst_ip, CMD_PORT);
     pko_reset_req(cmd_fd);
+    ps2_netfs_fd = -1;
     return 0;
 }
 
@@ -860,14 +860,26 @@ cli_setroot(arg)
  */
 int
 cli_copy(char *arg) {
-    int fd0, fd1, size, total;
-    char frompath[MAX_PATH];
-    char topath[MAX_PATH];
+    int fd0, fd1, total, i;
+    int argc;
+    char *argv[MAX_ARGV];
+    unsigned int size;
     char buffer[65536];
+    char device2[MAX_PATH], dir2[MAX_PATH], filename2[MAX_PATH];
+
+    argc = build_argv(argv, arg);
+    if ( argc < 2 ) {
+        printf("Not enough arguments\n");
+        return 0;
+    }
+    split_filename(device, dir, filename, argv[0]);
+    split_filename(device2, dir2, filename2, argv[1]);
+
+    for(i = 0; i < argc; i++) {
+        free(argv[i]);
+    }
 
     if ( device[0] != NULL ) {
-        arg_get_frompath(frompath, &arg);
-        arg_get_topath(topath, &arg);
         if ( ps2_netfs_fd < 0 ) {
             ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
             if ( ps2_netfs_fd < 0 ) {
@@ -875,11 +887,11 @@ cli_copy(char *arg) {
                 return 0;
             }
         }
-        fd0 = open(topath, O_RDWR | O_CREAT, 0644);
-        fd1 = ps2netfs_req_open(frompath, PS2_O_RDONLY);
+        fd0 = open(filename, O_RDWR | O_CREAT, 0644);
+        fd1 = ps2netfs_req_open(filename2, PS2_O_RDONLY);
         size = ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_END);
         ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_SET);
-        printf("\n [%s --> %s]\n\n  Progress: ", frompath, topath);
+        printf("\n [%s --> %s]\n\n  Progress: ", filename, filename2);
         while(size > 0) {
             printf("#");
             ps2netfs_req_read(fd1, buffer, sizeof(buffer));
@@ -893,17 +905,17 @@ cli_copy(char *arg) {
         ps2netfs_req_close(fd1);
         close(fd0);
         return 0;
+    } else if (device2[0] != NULL ) {
+        
 
     } else {
-        sprintf(clicom, "ls -l %s", arg);
+        sprintf(clicom, "cp %s", arg);
         return (system(clicom));
     }
 }
 
 int
-cli_ps2devlist(arg)
-    char *arg;
-{
+cli_devlist(void) {
     int numdevs, i;
     char devlist[256];
     char *ptr = devlist;
@@ -926,34 +938,8 @@ cli_ps2devlist(arg)
 }
 
 int
-cli_ps2dir(char *arg) {
-    int ret, fd;
-    ps2netfs_dirent_t dirent;
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
-        if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
-        }
-    }
-    printf("\nListing of: %s\n", arg);
-    ret = fd = ps2netfs_req_dopen(arg);
-    while (ret > 0) {
-        ret = ps2netfs_req_dread(fd, &dirent);
-        ps2netfs_showStat(&dirent);
-        printf(" %-20s \n", dirent.name);
-    }
-    if ( fd > 0 ) {
-        ps2netfs_req_dclose(fd);
-    }
-    printf("\n");
-    return 0;
-}
-
-int
 cli_ps2umount(char *arg) {
     int ret;
-    char *device, *fsname;
     if ( ps2_netfs_fd < 0 ) {
         ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
         if ( ps2_netfs_fd < 0 ) {
@@ -961,12 +947,11 @@ cli_ps2umount(char *arg) {
             return 0;
         }
     }
-    ret = ps2netfs_req_umount(device, 0);
+    ret = ps2netfs_req_umount(arg, 0);
     if ( ret < 0 ) {
         printf("unmount failed, ret = %d\n", ret);
-    } else {
     }
-    return 0;
+    return ret;
 }
 
 int
@@ -988,7 +973,7 @@ cli_rmdir(char *arg) {
     int ret;
     if (!arg)
         arg = "";
-    split_filename(&device, &dir, filename, arg);
+    split_filename(device, dir, filename, arg);
     if(device[0] != NULL) {
         if ( ps2_netfs_fd < 0 ) {
             ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
@@ -1000,8 +985,8 @@ cli_rmdir(char *arg) {
         ret = ps2netfs_req_rmdir(arg);
         if ( ret < 0 ) {
             printf("rmdir failed, ret = %d\n", ret);
-        } else {
         }
+        return 0;
     } else {
         sprintf(clicom, "rm -r %s", arg);
         return (system(clicom));
@@ -1011,7 +996,6 @@ cli_rmdir(char *arg) {
 int
 cli_ps2format(char *arg) {
     int ret;
-    char *device, fsname;
     if ( ps2_netfs_fd < 0 ) {
         ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
         if ( ps2_netfs_fd < 0 ) {
@@ -1032,7 +1016,7 @@ cli_mkdir(char *arg) {
     int ret;
     if (!arg)
         arg = "";
-    split_filename(&device, &dir, filename, arg);
+    split_filename(device, dir, filename, arg);
     if(device[0] != NULL) {
         if ( ps2_netfs_fd < 0 ) {
             ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
@@ -1044,9 +1028,8 @@ cli_mkdir(char *arg) {
         ret = ps2netfs_req_mkdir(arg);
         if ( ret < 0 ) {
             printf("mkdir failed, ret = %d\n", ret);
-        } else {
-            // ps2dir
         }
+        return 0;
     } else {
         sprintf(clicom, "mkdir %s", arg);
         return (system(clicom));
@@ -1066,7 +1049,6 @@ cli_ps2rename(char *arg) {
     ret = ps2netfs_req_delete(arg, 0);
     if ( ret < 0 ) {
         printf("rename failed, %d\n", ret);
-    } else {
     }
     return 0;
 }
@@ -1083,8 +1065,8 @@ cli_ps2mount(char *arg) {
             return 0;
         }
     }
-    arg_get_device(device, arg);
-    arg_get_fsname(fsname, arg);
+    /* arg_get_device(device, arg); */
+    /* arg_get_fsname(fsname, arg); */
     ret = ps2netfs_req_mount(device, fsname, PS2NETFS_FIO_MT_RDWR, "", 0);
     if ( ret < 0 ) {
         printf("mount failed, ret = %d\n", ret);

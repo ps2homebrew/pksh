@@ -157,7 +157,7 @@ typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-} pko_pkt_reset_req;
+} pkt_reset_req;
 
 typedef struct
 {
@@ -165,7 +165,7 @@ typedef struct
     unsigned short len;
     int  argc;
     char argv[MAX_PATH];
-} pko_pkt_execee_req;
+} pkt_execee_req;
 
 typedef struct
 {
@@ -173,7 +173,7 @@ typedef struct
     unsigned short len;
     unsigned short size;
     unsigned char file[MAX_PATH];
-} pko_pkt_gsexec_req;
+} pkt_gsexec_req;
 
 typedef struct
 {
@@ -181,25 +181,25 @@ typedef struct
     unsigned short len;
     int  argc;
     char argv[MAX_PATH];
-} pko_pkt_execiop_req;
+} pkt_execiop_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-} pko_pkt_poweroff_req;
+} pkt_poweroff_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-} pko_pkt_dump2screen_req;
+} pkt_dump2screen_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-} pko_pkt_dump2pc_req;
+} pkt_dump2pc_req;
 
 typedef struct
 {
@@ -208,21 +208,21 @@ typedef struct
     unsigned int offset;
     unsigned int size;
     char argv[MAX_PATH];
-} pko_pkt_dumpmem_req;
+} pkt_dumpmem_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
     int vpu;
-} pko_pkt_stopvu_req;
+} pkt_stopvu_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
     int vpu;
-} pko_pkt_startvu_req;
+} pkt_startvu_req;
 
 typedef struct
 {
@@ -230,4 +230,4 @@ typedef struct
     unsigned short len;
     unsigned int regs;
     char argv[MAX_PATH];
-} pko_pkt_dumpregs_req;
+} pkt_dumpregs_req;

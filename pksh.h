@@ -50,9 +50,9 @@
 
 #include "linkproto_core.h"
 #include "linkproto_stub.h"
+#include "netfsproto_core.h"
 #include "common.h"
 #include "rl_common.h"
-#include "ps2fs.h"
 
 #define MAX_SIZE        8192
 #define MAX_NO_PROMPT_COUNT 20
@@ -62,7 +62,6 @@
 #define LOG_F_MODE  (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define USEC 1000000
 #define MAX_CLIENTS 10
-
 
 /* variables */
 int doloop = 1;
@@ -89,8 +88,8 @@ int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
 int cli_vustop(), cli_vustart();
 // ps2 net fs commands
 int cli_mkdir(), cli_ps2format(), cli_ps2sync(), cli_rmdir();
-int cli_ps2mount(), cli_ps2rename(), cli_ps2umount(), cli_ps2devlist();
-int cli_copy(), cli_ps2dir();
+int cli_ps2mount(), cli_ps2rename(), cli_ps2umount(), cli_devlist();
+int cli_copy();
 
 typedef struct {
     char *name;     /* User printable name of the function. */
@@ -131,7 +130,7 @@ COMMAND commands[] = {
     { "vustop", cli_vustop, "vustop [0|1] :: Stop vu0+vif0 or vu1+vif1." },
     // PS2 NetFS commands
     { "cp", cli_copy, "copy :: cp [source] [destination]"},
-    { "devlist", cli_ps2devlist, "devlist ::" },
+    { "devlist", cli_devlist, "devlist ::" },
     { "format", cli_ps2format, "format ... "},
     { "mkdir", cli_mkdir, "mkdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
     { "ps2mount", cli_ps2mount, "mount [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},

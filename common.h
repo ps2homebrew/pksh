@@ -51,6 +51,8 @@
 #endif
 #define NEWLINE '\n'
 
+#define MAX_ARGV 256
+
 extern char **environ;
 
 static const int DUMP_REG_MAX = 12;
@@ -71,10 +73,8 @@ int argv_split(char *, const char *);
 int size_file(char *);
 int read_file(char *, unsigned char *, unsigned int);
 void arg_prepend_host(char *new, char *old);
-void arg_get_fsname(char *fsname, char *arg);
-void arg_get_device(char *device, char *arg);
-void arg_get_topath(char *topath, char *arg);
-void arg_get_frompath(char *frompath, char *arg);
 int get_register_index(char *str, int size);
+int build_argv(char *argv[], char *arg);
 void split_filename(char *device, char *dir, char *filename, const char *arg);
+int tokenize(char *argv[], const char *path);
 #endif

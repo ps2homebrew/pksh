@@ -263,14 +263,14 @@ pko_open_file(char *buf) {
     int flags;
     int mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
     char path[MAXPATHLEN];
-    pko_pkt_open_req *pkt;
-    pko_pkt_file_rly *reply;
+    pkt_file_req *pkt;
+    pkt_file_rly *reply;
     llist path_list;
-    pkt = (pko_pkt_open_req *)buf;
+    pkt = (pkt_file_req *)buf;
     flags = pko_fix_flags(ntohl(pkt->flags));
-    len = sizeof(pko_pkt_file_rly);
+    len = sizeof(pkt_file_rly);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(OPEN_RLY);
     reply->len = htons(len);
 
@@ -308,12 +308,12 @@ int
 pko_open_dir(char *buf) {
     unsigned short len;
     DIR *dirp;
-    pko_pkt_open_req *pkt;
-    pko_pkt_file_rly *reply;
-    pkt = (pko_pkt_open_req *)buf;
-    len = sizeof(pko_pkt_file_rly);
+    pkt_file_req *pkt;
+    pkt_file_rly *reply;
+    pkt = (pkt_file_req *)buf;
+    len = sizeof(pkt_file_rly);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(DOPEN_RLY);
     reply->len = htons(len);
 
@@ -329,7 +329,7 @@ pko_open_dir(char *buf) {
     reply->retval = htonl((int)dirp);
 
     if (DEBUG) {
-        printf("got fd %d\n", ntohl(reply->retval));
+        printf("got fd %d\n", (unsigned int)ntohl(reply->retval));
     }
 
     send(pko_srv_fd, reply, len, 0);
@@ -341,14 +341,14 @@ pko_read_dir(char *buf) {
     struct stat st;
     struct tm loctime;
     struct dirent *dirp;
-    pko_pkt_read_req *pkt;
-    pko_pkt_dread_rly *reply;
+    pkt_read_req *pkt;
+    pkt_dread_rly *reply;
 
-    pkt = (pko_pkt_read_req *)buf;
-    reply = (pko_pkt_dread_rly *)&send_packet[0];
+    pkt = (pkt_read_req *)buf;
+    reply = (pkt_dread_rly *)&send_packet[0];
     reply->cmd = htonl(DREAD_RLY);
-    reply->len = htons(sizeof(pko_pkt_dread_rly));
-    reply->ret = htonl((int)dirp = readdir((DIR *)ntohl(pkt->fd)));
+    reply->len = htons(sizeof(pkt_dread_rly));
+    reply->retval = htonl((int)dirp = readdir((DIR *)ntohl(pkt->fd)));
     if ( dirp != 0 ) {
         stat(dirp->d_name, &st);
 
@@ -396,7 +396,7 @@ pko_read_dir(char *buf) {
         strncpy(reply->path, dirp->d_name, 256);
     }
 
-    send(pko_srv_fd, reply, sizeof(pko_pkt_dread_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_dread_rly), 0);
     return 0;
 }
 
@@ -404,10 +404,10 @@ int
 pko_close_dir(char *buf) {
     int retval;
     int fd;
-    pko_pkt_close_req *pkt;
-    pko_pkt_file_rly *reply;
+    pkt_close_req *pkt;
+    pkt_file_rly *reply;
 
-    pkt = (pko_pkt_close_req *)buf;
+    pkt = (pkt_close_req *)buf;
     fd = ntohl(pkt->fd);
 
     if (DEBUG)
@@ -415,12 +415,12 @@ pko_close_dir(char *buf) {
 
     retval = closedir((DIR *)fd);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(DCLOSE_RLY);
-    reply->len = htons(sizeof(pko_pkt_file_rly));
+    reply->len = htons(sizeof(pkt_file_rly));
     reply->retval = htonl(retval);
 
-    send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_file_rly), 0);
     return 0;
 }
 
@@ -430,11 +430,11 @@ pko_close_file(char *buf)
     unsigned short len;
     int retval;
     int fd;
-    pko_pkt_close_req *pkt;
-    pko_pkt_file_rly *reply;
+    pkt_close_req *pkt;
+    pkt_file_rly *reply;
 
-    pkt = (pko_pkt_close_req *)buf;
-    len = sizeof(pko_pkt_file_rly);
+    pkt = (pkt_close_req *)buf;
+    len = sizeof(pkt_file_rly);
     fd = ntohl(pkt->fd);
 
     if (DEBUG)
@@ -442,12 +442,12 @@ pko_close_file(char *buf)
 
     retval = close(fd);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(CLOSE_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
 
-    send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_file_rly), 0);
 
     return 0;
 }
@@ -458,13 +458,13 @@ pko_read_file(char *buf)
     unsigned short len;
     int retval, nbytes, fd;
     int readbytes;
-    pko_pkt_read_req *pkt;
-    pko_pkt_read_rly *reply;
+    pkt_read_req *pkt;
+    pkt_read_rly *reply;
     char *filebuf;
     int ret;
 
-    pkt = (pko_pkt_read_req *)buf;
-    len = sizeof(pko_pkt_read_rly);
+    pkt = (pkt_read_req *)buf;
+    len = sizeof(pkt_read_rly);
     nbytes = ntohl(pkt->nbytes);
     fd = ntohl(pkt->fd);
     retval = ntohl(pkt->fd);
@@ -472,7 +472,7 @@ pko_read_file(char *buf)
     if (DEBUG)
         printf("read %d bytes from file desc %d\n", nbytes, fd);
 
-    reply = (pko_pkt_read_rly *)&send_packet[0];
+    reply = (pkt_read_rly *)&send_packet[0];
     reply->cmd = htonl(READ_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
@@ -491,7 +491,7 @@ pko_read_file(char *buf)
         }
     }
     reply->nbytes = htonl(readbytes);
-    send(pko_srv_fd, reply, sizeof(pko_pkt_read_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_read_rly), 0);
     ret = pko_send_bytes(pko_srv_fd, filebuf, readbytes);
     if (ret != readbytes) {
         perror("");
@@ -505,7 +505,7 @@ pko_read_file(char *buf)
         reply->nbytes = -1;
     }
     else {
-        reply->nbytes = read(pkt->fd, &send_packet[sizeof(pko_pkt_read_rly)],
+        reply->nbytes = read(pkt->fd, &send_packet[sizeof(pkt_read_rly)],
                              pkt->nbytes);
         if (DEBUG)
             printf("read %d bytes\n", reply->nbytes);
@@ -514,10 +514,10 @@ pko_read_file(char *buf)
     if (reply->nbytes < 0) {
         // Error
         perror("read file");
-        send(pko_srv_fd, reply, sizeof(pko_pkt_read_rly), 0);
+        send(pko_srv_fd, reply, sizeof(pkt_read_rly), 0);
     }
     else {
-        send(pko_srv_fd, reply, sizeof(pko_pkt_read_rly) + reply->nbytes, 0);
+        send(pko_srv_fd, reply, sizeof(pkt_read_rly) + reply->nbytes, 0);
     }        
 #endif
 
@@ -531,11 +531,11 @@ pko_write_file(char *buf) {
     int written;
     int bytes_left;
 
-    pko_pkt_write_req *pkt;
-    pko_pkt_file_rly *reply;
+    pkt_write_req *pkt;
+    pkt_file_rly *reply;
     char *databuf;
 
-    pkt = (pko_pkt_write_req *)buf;
+    pkt = (pkt_write_req *)buf;
     fd = ntohl(pkt->fd);
     nbytes = ntohl(pkt->nbytes);
 
@@ -589,11 +589,11 @@ pko_write_file(char *buf) {
 
     } while (bytes_left > 0);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(WRITE_RLY);
-    reply->len = htons((unsigned short)sizeof(pko_pkt_file_rly));
+    reply->len = htons((unsigned short)sizeof(pkt_file_rly));
     reply->retval = htonl(nbytes - bytes_left);
-    send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_file_rly), 0);
     return 0;
 }
 
@@ -602,17 +602,17 @@ pko_lseek_file(char *buf) {
     unsigned short len;
     int retval;
     int fd, offset, whence;
-    pko_pkt_lseek_req *pkt;
-    pko_pkt_file_rly *reply;
+    pkt_lseek_req *pkt;
+    pkt_file_rly *reply;
 
-    pkt = (pko_pkt_lseek_req *)buf;
-    len = sizeof(pko_pkt_file_rly);
+    pkt = (pkt_lseek_req *)buf;
+    len = sizeof(pkt_file_rly);
     fd = ntohl(pkt->fd);
     offset = ntohl(pkt->offset);
     whence = ntohl(pkt->whence);
     retval = lseek(fd, offset, whence);
 
-    reply = (pko_pkt_file_rly *)&send_packet[0];
+    reply = (pkt_file_rly *)&send_packet[0];
     reply->cmd = htonl(LSEEK_RLY);
     reply->len = htons(len);
     reply->retval = htonl(retval);
@@ -620,7 +620,7 @@ pko_lseek_file(char *buf) {
         printf("got fd %d\n", retval);
     }
 
-    send(pko_srv_fd, reply, sizeof(pko_pkt_file_rly), 0);
+    send(pko_srv_fd, reply, sizeof(pkt_file_rly), 0);
     return 0;
 }
 

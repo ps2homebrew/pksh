@@ -193,14 +193,14 @@ typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-} pko_pkt_hdr;
+} pkt_hdr;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
     unsigned int retval;
-} pko_pkt_file_rly;
+} pkt_file_rly;
 
 typedef struct
 {
@@ -208,14 +208,14 @@ typedef struct
     unsigned short len;
     int flags;
     char path[MAX_PATH];
-} pko_pkt_open_req;
+} pkt_file_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
     int fd;
-} pko_pkt_close_req;
+} pkt_close_req;
 
 typedef struct
 {
@@ -223,7 +223,7 @@ typedef struct
     unsigned short len;
     int fd;
     int nbytes;
-} pko_pkt_read_req;
+} pkt_read_req;
 
 typedef struct
 {
@@ -231,7 +231,7 @@ typedef struct
     unsigned short len;
     int retval;
     int nbytes;
-} pko_pkt_read_rly;
+} pkt_read_rly;
 
 typedef struct
 {
@@ -239,7 +239,7 @@ typedef struct
     unsigned short len;
     int fd;
     int nbytes;
-} pko_pkt_write_req;
+} pkt_write_req;
 
 typedef struct
 {
@@ -248,13 +248,13 @@ typedef struct
     int fd;
     int offset;
     int whence;
-} pko_pkt_lseek_req;
+} pkt_lseek_req;
 
 typedef struct
 {
     unsigned int cmd;
     unsigned short len;
-    int ret;
+    int retval;
     unsigned int mode;
     unsigned int attr;
     unsigned int size;
@@ -263,7 +263,7 @@ typedef struct
     unsigned char mtime[8];
     unsigned int hisize;
     char path[MAX_PATH];
-} pko_pkt_dread_rly;
+} pkt_dread_rly;
 
 typedef struct
 {
@@ -271,4 +271,39 @@ typedef struct
     unsigned short len;
     int flags;
     char path[MAX_PATH];
-} pko_pkt_dclose_rly;
+} pkt_dclose_rly;
+
+typedef struct 
+{
+    unsigned int cmd;
+    unsigned short len;
+    int fd;
+} pkt_dread_req;
+
+typedef struct
+{
+    unsigned int cmd;
+    unsigned short len;
+    char fsname[MAX_PATH];
+    char devname[MAX_PATH];
+    int flag;
+    char arg[MAX_PATH];
+    int arglen;
+} pkt_mount_req;
+
+typedef struct
+{
+    unsigned int cmd;
+    unsigned short len;
+    int retval;
+    int count;
+    char list[MAX_PATH];
+} pkt_devlist_rly;
+
+typedef struct
+{
+    unsigned int cmd;
+    unsigned short len;
+    int flags;
+    char path[MAX_PATH];
+} pkt_devlist_req;

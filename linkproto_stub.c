@@ -33,8 +33,8 @@
 int
 pko_dump2pc_req(int sock) {
     unsigned short len;
-    pko_pkt_dump2pc_req req;
-    len = sizeof(pko_pkt_dump2pc_req);
+    pkt_dump2pc_req req;
+    len = sizeof(pkt_dump2pc_req);
     req.cmd = htonl(NETDUMP_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
@@ -47,8 +47,8 @@ pko_dump2pc_req(int sock) {
 int
 pko_dump2screen_req(int sock) {
     unsigned short len;
-    pko_pkt_dump2screen_req req;
-    len = sizeof(pko_pkt_dump2screen_req);
+    pkt_dump2screen_req req;
+    len = sizeof(pkt_dump2screen_req);
     req.cmd = htonl(SCRDUMP_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
@@ -61,8 +61,8 @@ pko_dump2screen_req(int sock) {
 int
 pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int size) {
     unsigned short len;
-    pko_pkt_dumpmem_req req;
-    len = sizeof(pko_pkt_dumpmem_req);
+    pkt_dumpmem_req req;
+    len = sizeof(pkt_dumpmem_req);
     req.cmd = htonl(DUMPMEM_CMD);
     req.len = htons(len);
     req.offset = htonl(offset);
@@ -78,8 +78,8 @@ pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int size)
 int
 pko_dumpregs_req(int sock, char *file, unsigned int regs) {
     unsigned short len;
-    pko_pkt_dumpregs_req req;
-    len = sizeof(pko_pkt_dumpregs_req);
+    pkt_dumpregs_req req;
+    len = sizeof(pkt_dumpregs_req);
     req.cmd = htonl(DUMPREGS_CMD);
     req.len = htons(len);
     req.regs = htonl(regs);
@@ -94,8 +94,8 @@ pko_dumpregs_req(int sock, char *file, unsigned int regs) {
 int
 pko_execee_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     unsigned short len;
-    pko_pkt_execee_req req;
-    len = sizeof(pko_pkt_execee_req);
+    pkt_execee_req req;
+    len = sizeof(pkt_execee_req);
     req.cmd = htonl(EXECEE_CMD);
     req.len = htons(len);
     req.argc = htonl(argc);
@@ -111,8 +111,8 @@ pko_execee_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
 int
 pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     unsigned short len;
-    pko_pkt_execiop_req req;
-    len = sizeof(pko_pkt_execiop_req);
+    pkt_execiop_req req;
+    len = sizeof(pkt_execiop_req);
     req.cmd = htonl(EXECIOP_CMD);
     req.len = htons(len);
     req.argc = htonl(argc);
@@ -128,8 +128,8 @@ pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
 int
 pko_gsexec_req(int sock, char *file, unsigned int size) {
     unsigned short len;
-    pko_pkt_gsexec_req req;
-    len = sizeof(pko_pkt_gsexec_req);
+    pkt_gsexec_req req;
+    len = sizeof(pkt_gsexec_req);
     req.cmd = htonl(GSEXEC_CMD);
     req.len = htons(len);
     req.size = htons(size);
@@ -144,8 +144,8 @@ pko_gsexec_req(int sock, char *file, unsigned int size) {
 int
 pko_poweroff_req(int sock) {
     unsigned short len;
-    pko_pkt_poweroff_req req;
-    len = sizeof(pko_pkt_poweroff_req);
+    pkt_poweroff_req req;
+    len = sizeof(pkt_poweroff_req);
     req.cmd = htonl(POWEROFF_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
@@ -158,8 +158,8 @@ pko_poweroff_req(int sock) {
 int
 pko_reset_req(int sock) {
     unsigned short len;
-    pko_pkt_reset_req req;
-    len = sizeof(pko_pkt_reset_req);
+    pkt_reset_req req;
+    len = sizeof(pkt_reset_req);
     req.cmd = htonl(RESET_CMD);
     req.len = htons(len);
 #ifndef __WIN32__
@@ -172,8 +172,8 @@ pko_reset_req(int sock) {
 int
 pko_stop_vu(int sock, unsigned int vpu) {
     unsigned short len;
-    pko_pkt_stopvu_req req;
-    len = sizeof(pko_pkt_stopvu_req);
+    pkt_stopvu_req req;
+    len = sizeof(pkt_stopvu_req);
     req.cmd = htonl(STOPVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
@@ -187,8 +187,8 @@ pko_stop_vu(int sock, unsigned int vpu) {
 int
 pko_start_vu(int sock, unsigned int vpu) {
     unsigned short len;
-    pko_pkt_startvu_req req;
-    len = sizeof(pko_pkt_startvu_req);
+    pkt_startvu_req req;
+    len = sizeof(pkt_startvu_req);
     req.cmd = htonl(STARTVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
