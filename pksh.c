@@ -130,7 +130,6 @@ main(int argc, char* argv[])
                     if(prompt)
                         fprintf(stdout, "\n");
                     pko_srv_read(pko_srv_fd);
-
                 } else if (sockfd == pksh_srv_fd) {
                     clilen = sizeof(cliaddr);
                     connfd = accept(pksh_srv_fd, (struct sockaddr *)&cliaddr, &clilen);
@@ -224,7 +223,7 @@ pko_srv_read(int fd) {
     
     length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pko_pkt_hdr));
     if ( length == -1 ) {
-        perror("recv");
+        perror(" pko_srv_read recv");
     } else if ( length == 0 ) {
         if ( fd == pko_srv_fd ) {
             close(fd);
@@ -278,17 +277,6 @@ pko_srv_read(int fd) {
                 pko_lseek_file(&recv_packet[0]);
                 break;
             case PKO_DUMPMEM_CMD:
-                /* printf("size: %d", */
-                /*     (unsigned int)ntohl(((pko_pkt_dumpmem_req*) */
-                /*             &recv_packet[0])->size) */
-                /*     ); */
-                /* printf(", offset: %d", */
-                /*     (unsigned int)ntohl(((pko_pkt_dumpmem_req*) */
-                /*             &recv_packet[0])->offset) */
-                /*     ); */
-                /* printf(", file: %s\n", */
-                /*     ((pko_pkt_dumpmem_req*) */
-                /*         &recv_packet[0])->argv); */
                 dumpmem( 
                     ((pko_pkt_dumpmem_req*)
                         &recv_packet[0])->argv,
@@ -299,13 +287,6 @@ pko_srv_read(int fd) {
                     );
                 break;
             case PKO_DUMPREGS_CMD:
-                /* printf("regs: %d", */
-                /*     (unsigned int)ntohl(((pko_pkt_dumpregs_req*) */
-                /*             &recv_packet[0])->regs) */
-                /*     ); */
-                /* printf(", file: %s\n", */
-                /*     ((pko_pkt_dumpregs_req*) */
-                /*         &recv_packet[0])->argv); */
                 dumpregs(
                     ((pko_pkt_dumpregs_req*)&recv_packet[0])->argv,
                     ntohl(((pko_pkt_dumpregs_req*)&recv_packet[0])->regs)
@@ -318,14 +299,14 @@ pko_srv_read(int fd) {
             case PKO_STOPVU_CMD:
                 pko_cmd_con(dst_ip, PKO_CMD_PORT);
                 pko_stop_vu(pko_cmd_fd, 
-                    ntohl(((pko_pkt_stopvu_req *)
+                    ntohs(((pko_pkt_stopvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
             case PKO_STARTVU_CMD:
                 pko_cmd_con(dst_ip, PKO_CMD_PORT);
                 pko_start_vu(pko_cmd_fd, 
-                    ntohl(((pko_pkt_startvu_req *)
+                    ntohs(((pko_pkt_startvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;

@@ -226,21 +226,18 @@ pko_recv_bytes(int s, char *buf, int bytes) {
     int len;
 
     left = bytes;
-
     while (left > 0) {
         len = recv(s, &buf[bytes - left], left, 0);
         if (len < 0) {
-            perror("recv");
             if ((errno == EPIPE) || (errno == ECONNRESET) || 
                 (errno == ECONNABORTED)) {
                 return len;
             }
-            // Other error?
+            perror(" recv");
             continue;
         }
+        // EOF
         if (len == 0) {
-            // EOF
-            /* printf("Peer closed connection\n"); */
             return 0;
         }
         
