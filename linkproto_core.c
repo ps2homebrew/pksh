@@ -32,7 +32,6 @@
 
 static llist path_list;
 static int DEBUG;
-static DIR *dirptr_a[256];
 
 void
 pko_set_debug(int level) {
