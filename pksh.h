@@ -88,9 +88,9 @@ int cli_setroot(), cli_debug(), cli_gsexec();
 int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
 int cli_vustop(), cli_vustart();
 // ps2 net fs commands
-int cli_ps2mkdir(), cli_ps2format(), cli_ps2sync(), cli_ps2rmdir();
+int cli_mkdir(), cli_ps2format(), cli_ps2sync(), cli_rmdir();
 int cli_ps2mount(), cli_ps2rename(), cli_ps2umount(), cli_ps2devlist();
-int cli_ps2copyfrom(), cli_ps2copyto(), cli_ps2dir();
+int cli_copy(), cli_ps2dir();
 
 typedef struct {
     char *name;     /* User printable name of the function. */
@@ -130,14 +130,12 @@ COMMAND commands[] = {
     { "vustart", cli_vustart, "vustart [0|1] :: Start vu0+vif0 or vu1+vif1." },
     { "vustop", cli_vustop, "vustop [0|1] :: Stop vu0+vif0 or vu1+vif1." },
     // PS2 NetFS commands
-    { "ps2copyto", cli_ps2copyto, "format ... "},
-    { "ps2copyfrom", cli_ps2copyfrom, "format ... "},
-    { "ps2dir", cli_ps2dir, "dir ... "},
-    { "ps2devlist", cli_ps2devlist, "devlist ::" },
-    { "ps2format", cli_ps2format, "format ... "},
-    { "ps2mkdir", cli_ps2mkdir, "mkdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
+    { "cp", cli_copy, "copy :: cp [source] [destination]"},
+    { "devlist", cli_ps2devlist, "devlist ::" },
+    { "format", cli_ps2format, "format ... "},
+    { "mkdir", cli_mkdir, "mkdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
     { "ps2mount", cli_ps2mount, "mount [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
-    { "ps2rmdir", cli_ps2rmdir, "rmdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..." },
+    { "rmdir", cli_rmdir, "rmdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..." },
     { "ps2rename", cli_ps2rename, "rename [devive]:[dir] :: rename ..." },
     { "ps2sync", cli_ps2sync, "sync :: Sync IO operation with ps2netfs" },
     { "ps2umount", cli_ps2umount, "umount [devive]:[dir] :: "},

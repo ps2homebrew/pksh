@@ -238,7 +238,9 @@ pko_recv_bytes(int s, char *buf, int bytes) {
                 (errno == ECONNABORTED)) {
                 return len;
             }
-            perror(" recv");
+            if ( DEBUG ) { 
+                perror(" recv");
+            }
             continue;
         }
         // EOF

@@ -36,6 +36,9 @@ static char src_ip[16] = "0.0.0.0";
 static char pksh_history[MAXPATHLEN];
 static int time1, time2, time_base = 0;
 static struct timeval benchtime;
+static char device[MAXPATHLEN];
+static char dir[MAXPATHLEN];
+static char filename[MAXPATHLEN];
 int prompt = 1;
 
 int
@@ -434,11 +437,37 @@ int
 cli_list(arg)
     char *arg;
 {
+    int ret, fd;
     if (!arg)
         arg = "";
 
-    sprintf(clicom, "ls -l %s", arg);
-    return (system(clicom));
+    split_filename(&device, &dir, filename, arg);
+    if(device[0] != NULL) {
+        ps2netfs_dirent_t dirent;
+        if ( ps2_netfs_fd < 0 ) {
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
+        }
+        ret = fd = ps2netfs_req_dopen(arg);
+        if ( ret > 0 ) {
+            printf("[%s]\n", arg);
+        }
+        while (ret > 0) {
+            ret = ps2netfs_req_dread(fd, &dirent);
+            ps2netfs_showStat(&dirent);
+            printf(" %-20s \n", dirent.name);
+        }
+        if ( fd > 0 ) {
+            ps2netfs_req_dclose(fd);
+        }
+        return 0;
+    } else {
+        sprintf(clicom, "ls -l %s", arg);
+        return (system(clicom));
+    }
 }
 
 int
@@ -683,6 +712,7 @@ cli_vumem(void) {
     // if no tmpfile echo "sorry set tempfile in .pkshrc"
     // dump vu mem to tmpfile
     // load tmpfile and display, we need to figure out the window height.
+    return 0;
 }
 
 int
@@ -828,54 +858,47 @@ cli_setroot(arg)
 /*
  * PS2 NetFS commands
  */
-
 int
-cli_ps2copyfrom(char *arg) {
+cli_copy(char *arg) {
     int fd0, fd1, size, total;
     char frompath[MAX_PATH];
     char topath[MAX_PATH];
     char buffer[65536];
-    arg_get_frompath(frompath, &arg);
-    arg_get_topath(topath, &arg);
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
-        if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
-        }
-    }
-    fd0 = open(topath, O_RDWR | O_CREAT, 0644);
-    fd1 = ps2netfs_req_open(frompath, PS2_O_RDONLY);
-    size = ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_END);
-    ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_SET);
-    printf("\n [%s --> %s]\n\n  Progress: ", frompath, topath);
-    while(size > 0) {
-        printf("#");
-        ps2netfs_req_read(fd1, buffer, sizeof(buffer));
-        if(size < sizeof(buffer)) {
-            write(fd0, buffer, size);
-        } else {
-            write(fd0, buffer, sizeof(buffer));
-        }
-        size -= sizeof(buffer);
-    }
-    ps2netfs_req_close(fd1);
-    close(fd0);
-    return 0;
-}
 
-int
-cli_ps2copyto(char *arg) {
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    if ( device[0] != NULL ) {
+        arg_get_frompath(frompath, &arg);
+        arg_get_topath(topath, &arg);
         if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
         }
-    }
-    return 0;
-}
+        fd0 = open(topath, O_RDWR | O_CREAT, 0644);
+        fd1 = ps2netfs_req_open(frompath, PS2_O_RDONLY);
+        size = ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_END);
+        ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_SET);
+        printf("\n [%s --> %s]\n\n  Progress: ", frompath, topath);
+        while(size > 0) {
+            printf("#");
+            ps2netfs_req_read(fd1, buffer, sizeof(buffer));
+            if(size < sizeof(buffer)) {
+                write(fd0, buffer, size);
+            } else {
+                write(fd0, buffer, sizeof(buffer));
+            }
+            size -= sizeof(buffer);
+        }
+        ps2netfs_req_close(fd1);
+        close(fd0);
+        return 0;
 
+    } else {
+        sprintf(clicom, "ls -l %s", arg);
+        return (system(clicom));
+    }
+}
 
 int
 cli_ps2devlist(arg)
@@ -894,7 +917,7 @@ cli_ps2devlist(arg)
     }
 
     numdevs = ps2netfs_req_devlist(devlist);
-    printf("\nDevice list.\n");
+    printf("Device list.\n");
     for(i = 0; i < numdevs; i++) {
         printf(" dev %02d : '%s'\n", i, ptr);
         ptr += strlen(ptr)+1;
@@ -961,21 +984,28 @@ cli_ps2sync(char *arg) {
 }
 
 int
-cli_ps2rmdir(char *arg) {
+cli_rmdir(char *arg) {
     int ret;
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    if (!arg)
+        arg = "";
+    split_filename(&device, &dir, filename, arg);
+    if(device[0] != NULL) {
         if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
         }
-    }
-    ret = ps2netfs_req_rmdir(arg);
-    if ( ret < 0 ) {
-        printf("rmdir failed, ret = %d\n", ret);
+        ret = ps2netfs_req_rmdir(arg);
+        if ( ret < 0 ) {
+            printf("rmdir failed, ret = %d\n", ret);
+        } else {
+        }
     } else {
+        sprintf(clicom, "rm -r %s", arg);
+        return (system(clicom));
     }
-    return 0;
 }
 
 int
@@ -998,22 +1028,29 @@ cli_ps2format(char *arg) {
 }
 
 int
-cli_ps2mkdir(char *arg) {
+cli_mkdir(char *arg) {
     int ret;
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    if (!arg)
+        arg = "";
+    split_filename(&device, &dir, filename, arg);
+    if(device[0] != NULL) {
         if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
         }
-    }
-    ret = ps2netfs_req_mkdir(arg);
-    if ( ret < 0 ) {
-        printf("mkdir failed, ret = %d\n", ret);
+        ret = ps2netfs_req_mkdir(arg);
+        if ( ret < 0 ) {
+            printf("mkdir failed, ret = %d\n", ret);
+        } else {
+            // ps2dir
+        }
     } else {
-        // ps2dir
+        sprintf(clicom, "mkdir %s", arg);
+        return (system(clicom));
     }
-    return 0;
 }
 
 int

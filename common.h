@@ -76,4 +76,5 @@ void arg_get_device(char *device, char *arg);
 void arg_get_topath(char *topath, char *arg);
 void arg_get_frompath(char *frompath, char *arg);
 int get_register_index(char *str, int size);
+void split_filename(char *device, char *dir, char *filename, const char *arg);
 #endif

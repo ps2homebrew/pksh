@@ -257,6 +257,29 @@ tokenize(char *argv, const char *path) {
 }
 
 void
+split_filename(char *device, char *dir, char *filename, const char *arg) {
+    char *ptr;
+    memset(device, 0, MAXPATHLEN);
+    memset(dir, 0, MAXPATHLEN);
+    memset(filename, 0, MAXPATHLEN);
+    // check for device name
+    if ((ptr = strstr(arg, ":")) != NULL ) {
+        if ( (ptr - arg) > MAXPATHLEN ) {
+            device[0] = NULL;
+        } else {
+            strncpy(device, arg, ptr-arg+1);
+            device[ptr-arg+1] = NULL;
+        }
+    } else {
+        device[0] = NULL;
+    }
+
+    // check for last filename part
+
+    return;
+}
+
+void
 arg_get_device(char *device, char *arg) {
 }
 
