@@ -109,7 +109,7 @@ int pko_send_bytes(int s, char *buf, int bytes);
  * @return filedescriptor or -1 upon failure.
  */
 int pko_cmd_con(char *ip, int port);
-/*! Function for establishing a command listener.
+/*! Function for establishing a PS2 NetFS listener.
  * @param dst_ip a char pointer to ipaddress
  * @param port command port
  * @param timeout number of seconds before we time out.
