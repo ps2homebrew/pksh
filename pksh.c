@@ -385,9 +385,10 @@ int
 execute_line(line)
     char *line;
 {
-    int i;
+    int i, ret;
     COMMAND *command;
     char *word;
+    char *arg = strdup(line);
 
     i = 0;
     while (line[i] && whitespace(line[i]))
@@ -401,15 +402,18 @@ execute_line(line)
         line[i++] = '\0';
 
     command = find_command(word);
+
     if (!command) {
-        fprintf(stderr, "%s: No such command\n", word);
-        return(-1);
+        ret = system(arg);
+        free(arg);
+        return ret;
     }
 
     while (whitespace(line[i]))
         i++;
 
     word = line + i;
+    free(arg);
     return ((*(command->func))(word));
 }
 
