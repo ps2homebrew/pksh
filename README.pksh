@@ -9,6 +9,10 @@ INSTALL:
     To compile everything including standalone tools and npsh.
     $ make all
 
+	If you want to build ftp support into pksh use the CFLAGS with -DFTP
+	and comment the other one out, not that this requires the presence of
+	ftplib ( http://www.nbpfaus.net/~pfau/ftplib/ )
+
 pksh:
     A shell like cli for communication with pukklink/ps2link, it has readline
     capabilities ( command/file completion, command history ) and can log debug
