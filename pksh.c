@@ -222,8 +222,8 @@ pko_srv_read(int fd) {
     pko_pkt_hdr *header;
     
     length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pko_pkt_hdr));
-    if ( length == -1 ) {
-        perror(" pko_srv_read recv");
+    if ( length < 0 ) {
+        return len;
     } else if ( length == 0 ) {
         if ( fd == pko_srv_fd ) {
             close(fd);
