@@ -344,30 +344,22 @@ pko_read_dir(char *buf) {
     reply->len = htons(sizeof(pko_pkt_dread_rly));
     printf("reading from fd %d\n", ntohl(pkt->fd));
     readdir( (DIR *)ntohl(pkt->fd) );
-    printf("apa\n");
     if ( (dirp = readdir((DIR *)ntohl(pkt->fd))) == 0 ) {
         return -1;
     }
-    printf("stat\n");
     stat(dirp->d_name, &st);
-
-    printf(".\n");
     // add attributes
     reply->attr = htonl(0);
 
-    printf(".\n");
     // mode
     reply->size = htonl(st.st_size);
-    printf(".\n");
     reply->mode = (st.st_mode & 0x07);
-    printf(".\n");
     if (S_ISDIR(st.st_mode)) { reply->mode |= 0x20; }
     if (S_ISLNK(st.st_mode)) { reply->mode |= 0x08; }
     if (S_ISREG(st.st_mode)) { reply->mode |= 0x10; }
     // size
     reply->mode = htonl(reply->mode);
     
-    printf(".\n");
     // add time
     if (localtime_r(&(st.st_ctime), &loctime)) {
         reply->ctime[6] = loctime.tm_year;
@@ -378,7 +370,6 @@ pko_read_dir(char *buf) {
         reply->ctime[1] = loctime.tm_sec;
     }
 
-    printf(".\n");
     if (localtime_r(&(st.st_atime), &loctime)) {
         reply->atime[6] = loctime.tm_year;
         reply->atime[5] = loctime.tm_mon + 1;
@@ -388,7 +379,6 @@ pko_read_dir(char *buf) {
         reply->atime[1] = loctime.tm_sec;
     }
 
-    printf(".\n");
     if (localtime_r(&(st.st_mtime), &loctime)) {
         reply->mtime[6] = loctime.tm_year;
         reply->mtime[5] = loctime.tm_mon + 1;
@@ -398,12 +388,9 @@ pko_read_dir(char *buf) {
         reply->mtime[1] = loctime.tm_sec;
     }
 
-    printf(".\n");
     reply->hisize = htonl(0);
-    printf(".\n");
     strncpy(reply->path, dirp->d_name, 256);
 
-    printf(".\n");
     send(pko_srv_fd, reply, sizeof(reply), 0);
     return 0;
 }
