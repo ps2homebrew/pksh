@@ -51,7 +51,7 @@ main(int argc, char **argv)
 #ifndef __WIN32__
     bzero((void *)&addr, sizeof(addr));
 #else
-    memset((void *)&addr, sizeof(addr), 0);
+    memset((void *)&addr, 0, sizeof(addr));
 #endif
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PKO_SRV_PORT);
