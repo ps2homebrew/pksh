@@ -203,6 +203,10 @@ main(int argc, char* argv[])
         }
     }
 
+	if (ftpConn) {
+		FtpQuit(ftpConn);
+	}
+
     if (strcmp(pksh_history, "") != 0 ) {
         if ( (ret = write_history(pksh_history)) != 0) 
             perror("write_history");
@@ -1293,18 +1297,23 @@ cli_ftp(char *arg) {
             free_argv(argv, argc);
             return -1;
         }
+		printf("FTP connection to %s succesful\n", argv[0]);
     } else {
         // replace with ps2 ip from .pkshrc
         if(!FtpConnect("localhost", &ftpConn)) {
             return -1;
         }
+		printf("FTP connection to %s succesful\n", "localhost");
     }
     free_argv(argv, argc);
     if(!FtpLogin("anonymous", "anonymous", ftpConn)) {
         printf("Login failed\n");
         return -1;
     }
-    printf("FTP connection to %s succesful\n", "localhost");
+
+	if(!FtpOptions(FTPLIB_CONNMODE, FTPLIB_PASSIVE, ftpConn)) {
+		printf("Pasv failed\n");
+	}
     /* prompt_ftp(); */
     return 0;
 }

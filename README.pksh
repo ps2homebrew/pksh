@@ -54,6 +54,18 @@ pksh:
     meta-s  status
     meta-v  verbose on/off
 
+ps2netfs:
+	ps2netfs support is integrated in pksh, the "normal" commands like 'ls',
+	'cp', 'mkdir' all have ps2netfs capabilities, when a device is recognized
+	it will send it over ps2netfs, examples below.
+	
+	ls mc0:
+	mkdir mc0:test
+	cp some.elf mc0:test/
+	cp mc0:test/some.elf some.elf
+	rm mc0:test/some.elf
+	rm some.elf (this one will fall through to the shell and remove some.elf)
+
 pkshrc:
     place .pkshrc in $HOME ( \cygwin\home\Username cygwin users )
     confin options:
@@ -68,7 +80,7 @@ pkshrc:
         home = /default/path/to/start
 
 standalone:
-    execee, execiop, reset
+    eeexec, iopexec, reset, dumpmem, viewmem, gsexec
 
     These are standalone programs more suitable for batch processing.
     pksh must be running since the batch utilities connects to it.
