@@ -77,12 +77,14 @@ int pko_log_read(int);
 void read_config(void);
 int initialize_readline(void);
 int pko_srv_read(int);
+int dumpmem(char *file, unsigned int offset, unsigned int size);
+int dumpregs(char *file, unsigned int regs);
 
 int cli_cd(), cli_help(), cli_list(), cli_make();
 int cli_pwd(), cli_quit(), cli_execee(), cli_execeiop();
 int cli_reset(), cli_status(), cli_log(), cli_verbose();
 int cli_setroot(), cli_debug(), cli_gsexec();
-int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpreg();
+int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
 int cli_vustop(), cli_vustart();
 
 typedef struct {
@@ -104,7 +106,7 @@ COMMAND commands[] = {
     { "cd", cli_cd, "cd [dir] :: Change pksh directory to [dir]." },
     { "debug", cli_debug, "debug :: Show pksh debug messages. ( alt-d )" },
     { "dumpmem", cli_dumpmem, "dumpmem [file] [offset] [size] :: Dump [size] bytes of memory from [offset] to [file]." },
-    { "dumpreg", cli_dumpreg, "dumpreg [file] [dma|intc|gs|timer|vif|all] :: Dumps given registers to file." },
+    { "dumpreg", cli_dumpregs, "dumpreg [file] [dma|intc|gs|timer|vif|all] :: Dumps given registers to file." },
     { "eeexec", cli_execee, "eeexec [file] [argn] ... :: Execute file on EE." },
     { "exception", cli_exception, "exception [screen|console] :: Exception dumps to [screen] or [console]." },
     { "execee", cli_execee, "execee [file] [argn] ... :: Execute file on EE." },

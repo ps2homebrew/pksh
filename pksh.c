@@ -32,7 +32,6 @@
 
 static char dst_ip[16] = "192.168.0.10";
 static char src_ip[16] = "0.0.0.0";
-static char cmd[MAXPATHLEN];
 static char pksh_history[MAXPATHLEN];
 static int time1, time2, time_base = 0;
 static struct timeval benchtime;
@@ -279,8 +278,7 @@ pko_srv_read(int fd) {
                 pko_lseek_file(&recv_packet[0]);
                 break;
             case PKO_DUMPMEM_CMD:
-                /* printf("PKO_DUMPMEM_CMD\n"); */
-                /* printf("size: %d",  */
+                /* printf("size: %d", */
                 /*     (unsigned int)ntohl(((pko_pkt_dumpmem_req*) */
                 /*             &recv_packet[0])->size) */
                 /*     ); */
@@ -291,7 +289,7 @@ pko_srv_read(int fd) {
                 /* printf(", file: %s\n", */
                 /*     ((pko_pkt_dumpmem_req*) */
                 /*         &recv_packet[0])->argv); */
-                pko_dumpmemory_req(pko_cmd_fd, 
+                dumpmem( 
                     ((pko_pkt_dumpmem_req*)
                         &recv_packet[0])->argv,
                     (unsigned int)ntohl(((pko_pkt_dumpmem_req*)
@@ -301,14 +299,14 @@ pko_srv_read(int fd) {
                     );
                 break;
             case PKO_DUMPREGS_CMD:
-                /* printf("regs: %d",  */
+                /* printf("regs: %d", */
                 /*     (unsigned int)ntohl(((pko_pkt_dumpregs_req*) */
                 /*             &recv_packet[0])->regs) */
                 /*     ); */
                 /* printf(", file: %s\n", */
                 /*     ((pko_pkt_dumpregs_req*) */
                 /*         &recv_packet[0])->argv); */
-                pko_dumpregs_req(pko_cmd_fd, 
+                dumpregs(
                     ((pko_pkt_dumpregs_req*)&recv_packet[0])->argv,
                     ntohl(((pko_pkt_dumpregs_req*)&recv_packet[0])->regs)
                     );
@@ -318,12 +316,14 @@ pko_srv_read(int fd) {
                     ((pko_pkt_gsexec_req*)&recv_packet[0])->file
                     );
             case PKO_STOPVU_CMD:
+                pko_cmd_con(dst_ip, PKO_CMD_PORT);
                 pko_stop_vu(pko_cmd_fd, 
                     ntohl(((pko_pkt_stopvu_req *)
                             &recv_packet[0])->vpu)
                     );
                 break;
             case PKO_STARTVU_CMD:
+                pko_cmd_con(dst_ip, PKO_CMD_PORT);
                 pko_start_vu(pko_cmd_fd, 
                     ntohl(((pko_pkt_startvu_req *)
                             &recv_packet[0])->vpu)
@@ -436,12 +436,10 @@ cli_cd(arg)
         cli_pwd();
         return 0;
     }
-
     if (chdir(arg) == -1) {
         perror(arg);
         return 1;
     }
-
     cli_pwd();
     return (0);
 }
@@ -561,10 +559,10 @@ cli_execee(arg)
 }
 
 int
-cli_dumpreg(arg)
+cli_dumpregs(arg)
     char *arg;
 {
-    int i = 0;
+    int i, ret;
     unsigned int regs = DUMP_REG_MAX;
     char file[PKO_MAX_PATH];
     char *ptr;
@@ -583,9 +581,18 @@ cli_dumpreg(arg)
             break;
         }
     }
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    pko_dumpregs_req(pko_cmd_fd, file, regs);
+    ret = dumpregs(file, regs);
+    if ( ret < 0) {
+        perror(" dumpregs failed");
+    }
     return 0;
+}
+int
+dumpregs(char *file, unsigned int regs) {
+    char argv[PKO_MAX_PATH];
+    arg_prepend_host(argv, file);
+    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    return pko_dumpregs_req(pko_cmd_fd, argv, regs);
 }
 
 int
@@ -594,6 +601,7 @@ cli_dumpmem(arg)
 {
     unsigned int size = 0;
     unsigned int offset = 0;
+    int ret;
     char file[PKO_MAX_PATH];
     char *ptr;
     trim(arg);
@@ -608,12 +616,19 @@ cli_dumpmem(arg)
         return -1;
     }
     size = (unsigned int)strtol(ptr, (char **)NULL, 0);
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    printf("file = %s\n", file);
-    printf("offset = %d\n", offset);
-    printf("size = %d\n", size);
-    pko_dumpmemory_req(pko_cmd_fd, file, offset, size);
+    ret = dumpmem(file, offset, size);
+    if ( ret < 0) {
+        perror(" dumpmem failed");
+    }
     return 0;
+}
+
+int
+dumpmem(char *file, unsigned int offset, unsigned int size) {
+    char argv[PKO_MAX_PATH];
+    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    arg_prepend_host(argv, file);
+    return pko_dumpmemory_req(pko_cmd_fd, argv, offset, size);
 }
 
 int

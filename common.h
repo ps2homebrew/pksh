@@ -56,4 +56,5 @@ int arg_device_check(char *);
 int argv_split(char *, const char *);
 int size_file(char *);
 int read_file(char *, unsigned char *, unsigned int);
+void arg_prepend_host(char *new, char *old);
 #endif
