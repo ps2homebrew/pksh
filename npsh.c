@@ -277,7 +277,8 @@ int
 cli_execeiop(arg)
     char *arg;
 {
-    fix_cmd_arg(arg, cmd);
+    int argvlen;
+    fix_cmd_arg(arg, cmd, &argvlen);
     set_command(PACKET_EXECIOP);
     set_cmdbuf(cmd);
     return 0;
@@ -287,7 +288,8 @@ int
 cli_execee(arg)
     char *arg;
 {
-    fix_cmd_arg(arg, cmd);
+    int argvlen;
+    fix_cmd_arg(arg, cmd, &argvlen);
     set_command(PACKET_EXECPS2);
     set_cmdbuf(cmd);
     return 0;
