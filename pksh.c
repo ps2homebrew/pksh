@@ -89,6 +89,11 @@ main(int argc, char* argv[])
         pko_cmd_con(dst_ip, PKO_CMD_PORT);
         pko_dump2screen_req(pko_cmd_fd);
     }
+    else
+    {
+        pko_cmd_con(dst_ip, PKO_CMD_PORT);
+        pko_dump2pc_req(pko_cmd_fd);
+    }
 
     pko_log_fd = pko_log_setup(src_ip, PKO_LOG_PORT);
     pksh_srv_fd = pko_srv_setup(src_ip, PKO_SRV_PORT);
