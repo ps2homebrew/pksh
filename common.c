@@ -266,6 +266,7 @@ build_argv(char *argv[], char *arg) {
     char *aptr = arg;
 
 	if ((arg == NULL) || (strlen(arg) == 0)) {
+        argv[0] = NULL;
 		return 0;
 	}
 
@@ -288,4 +289,13 @@ build_argv(char *argv[], char *arg) {
         }
     }
     return i+1;
+}
+
+void
+free_argv(char *argv[], int argc) {
+    int i;
+    for(i = 0; i < argc; i++) {
+        free(argv[i]);
+    }
+    return;
 }

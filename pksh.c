@@ -46,13 +46,11 @@ static char filename2[MAX_PATH];
 #ifdef FTP
 static netbuf *ftpConn = NULL;
 #endif
-int prompt = 1;
 
 int
 main(int argc, char* argv[])
 {
     int ret;
-    int count = 0;
     // poll client stuff
     int i, j, maxi, connfd, sockfd;
     int maxfd;
@@ -152,16 +150,10 @@ main(int argc, char* argv[])
                     continue;
                 }
                 if ( sockfd == log_fd ) {
-                    if(prompt)
-                        fprintf(stdout, "\n");
                     pko_log_read(log_fd);
-                    prompt = 0;
                 } else if (sockfd == 0) {
-                    prompt = 1;
                     rl_callback_read_char();
                 } else if(sockfd == pko_srv_fd) {
-                    if(prompt)
-                        fprintf(stdout, "\n");
                     pko_srv_read(pko_srv_fd);
                 } else if (sockfd == pksh_srv_fd) {
                     clilen = sizeof(cliaddr);
@@ -190,16 +182,8 @@ main(int argc, char* argv[])
                         maxi--;
                     }
                 }
-                count = 0;
             }
         }
-
-        /* if( (prompt == 0) && (count > MAX_NO_PROMPT_COUNT)) { */
-        /*     rl_forced_update_display(); */
-        /*     count = 0; */
-        /*     prompt = 1; */
-        /* } */
-        count++;
     }
 
     rl_callback_handler_remove();
@@ -280,10 +264,6 @@ pko_srv_read(int fd) {
             return -1;
         }
     } else {
-        if(prompt)
-            fprintf(stdout, "\n");
-        prompt = 0;
-
         header = (pkt_hdr *)&recv_packet[0];
         cmd = ntohl(header->cmd);
         hlen = ntohs(header->len);
@@ -871,7 +851,7 @@ cli_setroot(arg)
  */
 int
 cli_copy(char *arg) {
-    int fd0, fd1, total, i, result;
+    int fd0, fd1, total, result;
     int argc;
     char *argv[MAX_ARGV];
     int size;
@@ -885,9 +865,7 @@ cli_copy(char *arg) {
     split_filename(device, dir, filename, argv[0]);
     split_filename(device2, dir2, filename2, argv[1]);
 
-    for(i = 0; i < argc; i++) {
-        free(argv[i]);
-    }
+    free_argv(argv, argc);
 
     if ( device[0] != NULL ) {
         if ( ps2_netfs_fd < 0 ) {
@@ -1266,15 +1244,28 @@ read_config(void)
 #ifdef FTP
 int
 cli_ftp(char *arg) {
+    int argc;
+    char *argv[MAX_ARGV];
     FtpInit();
-    if(!FtpConnect("localhost", &ftpConn)) {
-        printf("Unable to connect\n");
-        return -1;
+
+    argc = build_argv(argv, arg);
+    if (argv[0] != NULL ) {
+        if(!FtpConnect(argv[0], &ftpConn)) {
+            free_argv(argv, argc);
+            return -1;
+        }
+    } else {
+        // replace with ps2 ip from .pkshrc
+        if(!FtpConnect("localhost", &ftpConn)) {
+            return -1;
+        }
     }
+    free_argv(argv, argc);
     if(!FtpLogin("anonymous", "anonymous", ftpConn)) {
         printf("Login failed\n");
         return -1;
     }
+    printf("FTP connection to %s succesful\n", "localhost");
     /* prompt_ftp(); */
     return 0;
 }
@@ -1310,16 +1301,19 @@ cli_ftplist(char *arg) {
 int
 cli_ftpput(char *arg) {
     int ret;
-    int mode, argc;
+    int argc;
     char *argv[MAX_ARGV];
+    static char mode = 'I';
     argc = build_argv(argv, arg);
     if (!ftpConn) {
         if(cli_ftp(NULL)) {
         }
     }
     ret = FtpPut(argv[0], argv[1], mode, ftpConn);
+    free_argv(argv, argc);
     if (!ret) {
         printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+        return -1;
     }
     return 0;
 }
@@ -1359,11 +1353,19 @@ cli_ftpdelete(char *arg) {
 }
 
 int
-cli_ftpclose(char *arg) {
+cli_ftpclose(void) {
+    FtpQuit(ftpConn);
+    printf("FTP connection closed\n");
+    return 0;
+}
+
+int
+cli_ftpsite(char *arg) {
     int ret;
-    if (!ftpConn) {
-        if(cli_ftp(NULL)) {
-        }
+    ret = FtpSite(arg, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
     }
+    return 0;
 }
 #endif

@@ -75,5 +75,6 @@ int read_file(char *, unsigned char *, unsigned int);
 void arg_prepend_host(char *new, char *old);
 int get_register_index(char *str, int size);
 int build_argv(char *argv[], char *arg);
+void free_argv(char *argv[], int argc);
 void split_filename(char *device, char *dir, char *filename, const char *arg);
 #endif

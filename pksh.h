@@ -92,7 +92,7 @@ int cli_ps2mount(), cli_rename(), cli_ps2umount(), cli_devlist();
 int cli_copy();
 // ftp commands
 int cli_ftp(), cli_ftpget(), cli_ftpput(), cli_ftpdir(), cli_ftpdelete();
-int cli_ftplist(), cli_ftpclose();
+int cli_ftplist(), cli_ftpclose(), cli_ftpsite();
 
 typedef struct {
     char *name;     /* User printable name of the function. */
@@ -150,6 +150,7 @@ COMMAND commands[] = {
     { "get", cli_ftpget, "ftp get command"},
     { "dele", cli_ftpdelete, "ftp dele command"},
     { "close", cli_ftpclose, "ftp close command"},
+    { "site", cli_ftpsite, "ftp site command"},
     #endif
 
     { (char *)NULL, (Function *)NULL, (char *)NULL }
