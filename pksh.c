@@ -30,6 +30,7 @@
  */
 #include "pksh.h"
 #include "netfsproto_core.h"
+#include "ftplib.h"
 
 static char dst_ip[16] = "192.168.0.10";
 static char src_ip[16] = "0.0.0.0";
@@ -42,6 +43,9 @@ static char filename[MAXPATHLEN];
 static char device2[MAX_PATH];
 static char dir2[MAX_PATH];
 static char filename2[MAX_PATH];
+#ifdef FTP
+static netbuf *ftpConn = NULL;
+#endif
 int prompt = 1;
 
 int
@@ -1258,3 +1262,90 @@ read_config(void)
     }
     return;
 }
+
+#ifdef FTP
+int
+cli_ftp(char *arg) {
+    FtpInit();
+    if(!FtpConnect("localhost", &ftpConn)) {
+        printf("Unable to connect\n");
+        return -1;
+    }
+    if(!FtpLogin("", "", ftpConn)) {
+        printf("Login failed\n");
+        return -1;
+    }
+    /* prompt_ftp(); */
+    return 0;
+}
+
+int
+cli_ftpdir(char *arg) {
+    int ret;
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    ret = FtpDir(NULL, arg, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    return 0;
+}
+
+int
+cli_ftplist(char *arg) {
+    int ret;
+    ret = FtpNlst(NULL, arg, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    return 0;
+}
+
+int
+cli_ftpput(char *arg) {
+    int ret;
+    int mode, argc;
+    char *argv[MAX_ARGV];
+    argc = build_argv(argv, arg);
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
+    }
+    ret = FtpPut(argv[0], argv[1], mode, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    return 0;
+}
+
+int
+cli_ftpget(char *arg) {
+    int ret;
+    int mode, argc;
+    char *argv[MAX_ARGV];
+    argc = build_argv(argv, arg);
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
+    }
+    ret = FtpGet(argv[0], argv[1], mode, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    return 0;
+}
+int
+cli_ftpdelete(char *arg) {
+    int ret;
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
+    }
+    ret = FtpDelete(arg, ftpConn);
+    if (!ret) {
+        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    }
+    return 0;
+}
+#endif

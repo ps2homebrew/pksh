@@ -1,7 +1,7 @@
 .SUFFIXES : .c .o
 CC = /usr/bin/gcc
 CFLAGS = -g
-LIBS = -lreadline -lcurses -lncurses
+LIBS = -lreadline -lcurses -lncurses -lftp
 INC = -L/usr/local/lib -I/usr/local/include -I/usr/include
 NPLIBS = -lusb -lreadline -lc -lcurses -lncurses
 RM = rm -rf
@@ -29,6 +29,8 @@ CFLAGS += -Wbad-function-cast -Wsign-compare
 CFLAGS += -Waggregate-return -Wmissing-noreturn -Wnested-externs
 CFLAGS += -Wchar-subscripts -Wformat-security
 
+.c.o:
+	$(CC) $(CFLAGS) -o $@ -c $< $(INC)
 .o:
 	$(CC) $(CFLAGS) -o $@ -c $< $(INC)
 
