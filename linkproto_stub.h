@@ -73,6 +73,7 @@
 #define STOPVU_CMD      0xbabe0209
 #define DUMPREGS_CMD    0xbabe020a
 #define GSEXEC_CMD      0xbabe020b
+#define WRITEMEM_CMD    0xbabe020c
 
 #define MAX_PATH    256
 #define PACKET_MAXSIZE  4096
@@ -152,6 +153,14 @@ int pko_start_vu(int sock, unsigned int vpu);
  */
 int ps2link_open(int *sock, char *dst);
 
+/*! Tells ps2link to write given file to memory at offset
+ * @param sock The socket to connect to
+ * @param file File to dump to
+ * @param offset Memory start adress
+ * @param size Size to dump
+ */
+int pko_writemem_req(int sock, char *file, unsigned int offset, unsigned int size);
+
 // packet types
 typedef struct
 {
@@ -208,7 +217,7 @@ typedef struct
     unsigned int offset;
     unsigned int size;
     char argv[MAX_PATH];
-} pkt_dumpmem_req;
+} pkt_memio_req;
 
 typedef struct
 {

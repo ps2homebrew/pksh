@@ -61,8 +61,8 @@ pko_dump2screen_req(int sock) {
 int
 pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int size) {
     unsigned short len;
-    pkt_dumpmem_req req;
-    len = sizeof(pkt_dumpmem_req);
+    pkt_memio_req req;
+    len = sizeof(pkt_memio_req);
     req.cmd = htonl(DUMPMEM_CMD);
     req.len = htons(len);
     req.offset = htonl(offset);
@@ -219,3 +219,22 @@ ps2link_open(int *sock, char *dst) {
             sockaddr_in));
 	return ret;
 }
+
+int
+pko_writemem_req(int sock, char *file, unsigned int offset, unsigned int size) {
+    unsigned short len;
+    pkt_memio_req req;
+    len = sizeof(pkt_memio_req);
+    req.cmd = htonl(WRITEMEM_CMD);
+    req.len = htons(len);
+    req.offset = htonl(offset);
+    req.size = htonl(size);
+    strncpy(req.argv, file, MAX_PATH);
+#ifndef __WIN32__
+    return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
+}
+
+

@@ -309,11 +309,11 @@ pko_srv_read(int fd) {
                 break;
             case DUMPMEM_CMD:
                 dumpmem( 
-                    ((pkt_dumpmem_req*)
+                    ((pkt_memio_req*)
                         &recv_packet[0])->argv,
-                    (unsigned int)ntohl(((pkt_dumpmem_req*)
+                    (unsigned int)ntohl(((pkt_memio_req*)
                             &recv_packet[0])->offset),
-                    (unsigned int)ntohl(((pkt_dumpmem_req*)
+                    (unsigned int)ntohl(((pkt_memio_req*)
                             &recv_packet[0])->size)
                     );
                 break;
@@ -850,6 +850,35 @@ cli_verbose() {
 }
 
 int
+cli_writemem(char *arg) {
+    int ret;
+    char file[MAX_PATH];
+    char argv[MAX_PATH];
+    int size, fd, offset;
+    char *ptr;
+    trim(arg);
+
+    if ((ptr = strchr(arg, ' ')) == NULL) {
+        return -1;
+    }
+    strncpy(file, arg, strlen(arg)-strlen(ptr));
+    file[strlen(arg)-strlen(ptr)] = '\0';
+    offset = (unsigned int)strtol(ptr, (char **)NULL, 0);
+
+    fd = open(file, O_RDONLY);
+    size = lseek(fd, 0, SEEK_END);
+    close(fd);
+
+    pko_cmd_con(dst_ip, CMD_PORT);
+    arg_prepend_host(argv, file);
+    ret = pko_writemem_req(cmd_fd, argv, offset, size);
+    if ( ret < 0 ) {
+        perror(" writemem failed");
+    }
+    return 0;
+}
+
+int
 cli_setroot(arg)
     char *arg;
 {
@@ -914,7 +943,6 @@ cli_copy(char *arg) {
         close(fd0);
         return 0;
     } else if (device2[0] != NULL ) {
-        printf("copying to ps2\n");
         if ( ps2_netfs_fd < 0 ) {
             ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
             if ( ps2_netfs_fd < 0 ) {

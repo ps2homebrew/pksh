@@ -85,7 +85,7 @@ int cli_pwd(), cli_quit(), cli_execee(), cli_execeiop();
 int cli_reset(), cli_status(), cli_log(), cli_verbose();
 int cli_setroot(), cli_debug(), cli_gsexec();
 int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
-int cli_vustop(), cli_vustart();
+int cli_vustop(), cli_vustart(), cli_writemem();
 // ps2 net fs commands
 int cli_mkdir(), cli_ps2format(), cli_ps2sync(), cli_rmdir();
 int cli_ps2mount(), cli_rename(), cli_ps2umount(), cli_devlist();
@@ -131,6 +131,7 @@ COMMAND commands[] = {
     { "verbose", cli_verbose, "verbose :: Show verbose pksh messages. ( alt-v )" },
     { "vustart", cli_vustart, "vustart [0|1] :: Start vu0+vif0 or vu1+vif1." },
     { "vustop", cli_vustop, "vustop [0|1] :: Stop vu0+vif0 or vu1+vif1." },
+    { "writemem", cli_writemem, "writemem [file] [offset] :: Writes the contents of the file to offset"},
     // PS2 NetFS commands
     { "cp", cli_copy, "copy :: cp [source] [destination]"},
     { "devlist", cli_devlist, "devlist ::" },
