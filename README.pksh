@@ -10,7 +10,7 @@ INSTALL:
     $ make all
 
 	If you want to build ftp support into pksh use the CFLAGS with -DFTP
-	and comment the other one out, not that this requires the presence of
+	and comment the other one out, note that this requires the presence of
 	ftplib ( http://www.nbpfaus.net/~pfau/ftplib/ )
 
 pksh:
