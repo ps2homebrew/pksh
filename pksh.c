@@ -30,7 +30,9 @@
  */
 #include "pksh.h"
 #include "netfsproto_core.h"
+#ifdef FTP
 #include "ftplib.h"
+#endif
 
 static char dst_ip[16] = "192.168.0.10";
 static char src_ip[16] = "0.0.0.0";

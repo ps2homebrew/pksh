@@ -2,7 +2,8 @@
 CC = /usr/bin/gcc
 CFLAGS = -g
 # CFLAGS = -g -DFTP
-LIBS = -lreadline -lcurses -lncurses -lftp
+#LIBS = -lreadline -lcurses -lncurses -lftp
+LIBS = -lreadline -lcurses -lncurses
 INC = -L/usr/local/lib -I/usr/local/include -I/usr/include
 NPLIBS = -lusb -lreadline -lc -lcurses -lncurses
 RM = rm -rf
