@@ -42,8 +42,6 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 
-#include "common.h"
-
 #define PKO_SRV_PORT    0x4711
 #define PKO_CMD_PORT    0x4712
 #define PKO_LOG_PORT    0x4712
