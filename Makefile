@@ -13,9 +13,11 @@ FILES = pksh/Makefile pksh/README.npsh pksh/README.pksh  pksh/execee.c pksh/exec
 	pksh/pl2301.c pksh/npsh.h\
 	pksh/npsh.c pksh/common.c pksh/common.h pksh/packet.c pksh/packet.h\
 	pksh/naplink.h pksh/SAMPLE.npshrc\
-    pksh/SAMPLE.pkshrc pksh/LICENSE pksh/rl_common.c pksh/rl_common.h
+    pksh/SAMPLE.pkshrc pksh/LICENSE pksh/rl_common.c pksh/rl_common.h\
+	pksh/ps2fs.h pksh/netfsproto_core.c
 
-PKSH_OBJ = rl_common.o common.o linkproto_stub.o linkproto_core.o pksh.o
+PKSH_OBJ = rl_common.o common.o linkproto_stub.o linkproto_core.o pksh.o \
+		netfsproto_core.o
 NPSH_OBJ = rl_common.o common.o packet.o pl2301.o npsh.o naplink.o
 
 # protective gear on
@@ -40,6 +42,15 @@ execiop: common.o linkproto_stub.o execiop.o
 
 reset: common.o linkproto_stub.o reset.o 
 	$(CC) common.o linkproto_stub.o reset.o -o $@
+
+dumpmem: common.o linkproto_stub.o dumpmem.o 
+	$(CC) common.o linkproto_stub.o dumpmem.o -o $@
+
+dumpreg: common.o linkproto_stub.o dumpreg.o 
+	$(CC) common.o linkproto_stub.o dumpreg.o -o $@
+
+viewmem: common.o linkproto_stub.o viewmem.o 
+	$(CC) common.o linkproto_stub.o viewmem.o -o $@
 
 naplink.o:
 	$(CC) -c naplink.c $(INC)
