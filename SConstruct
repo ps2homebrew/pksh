@@ -35,3 +35,13 @@ Program('pksh', common_objects + pksh_sources, LIBS = pksh_libs, LIBPATH = '/usr
 Program('eeexec', common_objects + batch_io_sources + ['eeexec.c'])
 # iopexec
 Program('iopexec', common_objects + batch_io_sources + ['iopexec.c'])
+# reset
+Program('reset', common_objects + batch_io_sources + ['reset.c'])
+# dumpmem
+Program('dumpmem', common_objects + batch_io_sources + ['dumpmem.c'])
+# dumpreg
+Program('dumpreg', common_objects + batch_io_sources + ['dumpreg.c'])
+# viewmem
+Program('viewmem', common_objects + batch_io_sources + ['viewmem.c'])
+# gsexec
+Program('gsexec', common_objects + batch_io_sources + ['gsexec.c'])
