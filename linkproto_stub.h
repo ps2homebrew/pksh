@@ -107,8 +107,9 @@ int pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int s
 int pko_dumpregs_req(int sock, char *file, unsigned int regs);
 /*! Tells ps2link to dump given registers
  * @param sock The socket to connect to
- * @param file File to dump to
- * @param regs Type of registers to dump
+ * @param argv Argument array where the first one is the path to the executable
+ * @param argvlen Length of argv
+ * @param argc Number of arguments in argv
  */
 int pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int argc);
 /*! Tells ps2link to execute given file on EE
@@ -118,12 +119,12 @@ int pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int arg
  * @param argc Number of arguments in argv
  */
 int pko_execee_req(int sock, char *argv, unsigned int argvlen, unsigned int argc);
-/*! Tells ps2link to send given file to GS
+/*! Tells ps2link to send data from given file to GS
  * @param sock The socket to connect to
  * @param file File that should be sent to GS
  * @param size Size of the file
  */
-int pko_gsexec_req(int soc, char *file, unsigned int size);
+int pko_gsexec_req(int sock, char *file, unsigned int size);
 /*! Tells ps2link to poweroff PS2
  * @param sock The socket to connect to
  */

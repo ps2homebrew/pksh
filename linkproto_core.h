@@ -81,14 +81,14 @@ int pko_cmd_fd;
 int pko_log_fd;
 
 /*! Function for reading data from clients and ps2link
- * @param sock The socket to connect to
+ * @param s The socket to connect to
  * @param buf Pointer for data
  * @param bytes Number of bytes to read
  * @return Number of bytes received
  */
 int pko_recv_bytes(int s, char *buf, int bytes);
 /*! Function for sending data to ps2link
- * @param sock The socket to connect to
+ * @param s The socket to connect to
  * @param buf Pointer for data
  * @param bytes Number of bytes to send
  * @return Number of bytes sent
@@ -101,16 +101,16 @@ int pko_send_bytes(int s, char *buf, int bytes);
  */
 int pko_cmd_con(char *ip, int port);
 /*! Function for establishing a command listener.
- * @param ip a char pointer to ipaddress
+ * @param dst_ip a char pointer to ipaddress
  * @param port command port
+ * @param timeout number of seconds before we time out.
  * @return filedescriptor or -1 upon failure.
  */
 int pko_cmd_setup(char *dst_ip, int port, int timeout);
 /*! Function for accepting commands from clients
- * @param ip The socket to connect to
- * @param buf Pointer for data
- * @param bytes Number of bytes to send
- * @return Number of bytes sent
+ * @param src_ip The socket to connect to.
+ * @param port port to bind to.
+ * @return filedescriptor or -1 upon failure.
  */
 int pko_srv_setup(char *src_ip, int port);
 void fileio();
@@ -146,8 +146,8 @@ int pko_lseek_file(char *buf);
  * @return filedescriptor or -1 upon failure.
  */
 int pko_log_setup(char *src_ip, int port);
-/*! Function for replying on file open request
- * @param buf Pointer for request data
+/*! Function to fix file mode flags
+ * @param flags file mode flags to fix.
  * @return filedescriptor or -1 upon failure.
  */
 int pko_fix_flags(int flags);
