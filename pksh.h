@@ -92,6 +92,7 @@ int cli_ps2mount(), cli_rename(), cli_ps2umount(), cli_devlist();
 int cli_copy();
 // ftp commands
 int cli_ftp(), cli_ftpget(), cli_ftpput(), cli_ftpdir(), cli_ftpdelete();
+int cli_ftplist(), cli_ftpclose();
 
 typedef struct {
     char *name;     /* User printable name of the function. */
@@ -142,11 +143,13 @@ COMMAND commands[] = {
     { "ps2umount", cli_ps2umount, "umount [devive]:[dir] :: "},
 
     #ifdef FTP
-    { "ftp", cli_ftp, "ftp"},
-    { "list", cli_ftplist, "ftp"},
-    { "put", cli_ftpput, "ftp"},
-    { "get", cli_ftpget, "ftp"},
-    { "dele", cli_ftpdelete, "ftp"},
+    { "ftp", cli_ftp, "ftp init command"},
+    { "dir", cli_ftpdir, "ftp dir command"},
+    { "flist", cli_ftplist, "ftp list command"},
+    { "put", cli_ftpput, "ftp put command"},
+    { "get", cli_ftpget, "ftp get command"},
+    { "dele", cli_ftpdelete, "ftp dele command"},
+    { "close", cli_ftpclose, "ftp close command"},
     #endif
 
     { (char *)NULL, (Function *)NULL, (char *)NULL }

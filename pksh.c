@@ -1271,7 +1271,7 @@ cli_ftp(char *arg) {
         printf("Unable to connect\n");
         return -1;
     }
-    if(!FtpLogin("", "", ftpConn)) {
+    if(!FtpLogin("anonymous", "anonymous", ftpConn)) {
         printf("Login failed\n");
         return -1;
     }
@@ -1282,8 +1282,9 @@ cli_ftp(char *arg) {
 int
 cli_ftpdir(char *arg) {
     int ret;
-    if (!ret) {
-        printf("ftp error: %s\n", FtpLastResponse(ftpConn));
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
     }
     ret = FtpDir(NULL, arg, ftpConn);
     if (!ret) {
@@ -1295,6 +1296,10 @@ cli_ftpdir(char *arg) {
 int
 cli_ftplist(char *arg) {
     int ret;
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
+    }
     ret = FtpNlst(NULL, arg, ftpConn);
     if (!ret) {
         printf("ftp error: %s\n", FtpLastResponse(ftpConn));
@@ -1322,19 +1327,23 @@ cli_ftpput(char *arg) {
 int
 cli_ftpget(char *arg) {
     int ret;
-    int mode, argc;
+    int argc;
+    static char mode = 'I';
     char *argv[MAX_ARGV];
     argc = build_argv(argv, arg);
     if (!ftpConn) {
         if(cli_ftp(NULL)) {
         }
     }
+    printf("argv[0] = %s\n", argv[0]);
+    printf("argv[1] = %s\n", argv[1]);
     ret = FtpGet(argv[0], argv[1], mode, ftpConn);
     if (!ret) {
         printf("ftp error: %s\n", FtpLastResponse(ftpConn));
     }
     return 0;
 }
+
 int
 cli_ftpdelete(char *arg) {
     int ret;
@@ -1347,5 +1356,14 @@ cli_ftpdelete(char *arg) {
         printf("ftp error: %s\n", FtpLastResponse(ftpConn));
     }
     return 0;
+}
+
+int
+cli_ftpclose(char *arg) {
+    int ret;
+    if (!ftpConn) {
+        if(cli_ftp(NULL)) {
+        }
+    }
 }
 #endif
