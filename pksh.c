@@ -223,7 +223,7 @@ pko_srv_read(int fd) {
     
     length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pko_pkt_hdr));
     if ( length < 0 ) {
-        return len;
+        return length;
     } else if ( length == 0 ) {
         if ( fd == pko_srv_fd ) {
             close(fd);
