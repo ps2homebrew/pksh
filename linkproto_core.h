@@ -42,6 +42,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <dirent.h>
+#include <time.h>
 
 #include "common.h"
 #include "list.h"

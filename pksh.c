@@ -153,7 +153,7 @@ main(int argc, char* argv[])
                     if ( pko_srv_read(sockfd) < 0 ) {
                         close(sockfd);
                         FD_CLR(sockfd, &master_set);
-                        client[i] == -1;
+                        client[i] = -1;
                         maxi--;
                     }
                 }
