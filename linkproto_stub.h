@@ -31,9 +31,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#ifndef __WIN32__
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/param.h>
@@ -41,6 +42,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#else
+#include <winsock.h>
+#endif
 
 #define PKO_SRV_PORT    0x4711
 #define PKO_CMD_PORT    0x4712
@@ -202,14 +206,14 @@ typedef struct
     char argv[PKO_MAX_PATH];
 } pko_pkt_dumpmem_req;
 
-typedef struct __attribute__((packed))
+typedef struct
 {
     unsigned int cmd;
     unsigned short len;
     int vpu;
 } pko_pkt_stopvu_req;
 
-typedef struct __attribute__((packed))
+typedef struct
 {
     unsigned int cmd;
     unsigned short len;

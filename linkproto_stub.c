@@ -37,7 +37,11 @@ pko_dump2pc_req(int sock) {
     len = sizeof(pko_pkt_dump2pc_req);
     req.cmd = htonl(PKO_NETDUMP_CMD);
     req.len = htons(len);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -47,7 +51,11 @@ pko_dump2screen_req(int sock) {
     len = sizeof(pko_pkt_dump2screen_req);
     req.cmd = htonl(PKO_SCRDUMP_CMD);
     req.len = htons(len);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -60,7 +68,11 @@ pko_dumpmemory_req(int sock, char *file, unsigned int offset, unsigned int size)
     req.offset = htonl(offset);
     req.size = htonl(size);
     strncpy(req.argv, file, PKO_MAX_PATH);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -72,7 +84,11 @@ pko_dumpregs_req(int sock, char *file, unsigned int regs) {
     req.len = htons(len);
     req.regs = htonl(regs);
     strncpy(req.argv, file, PKO_MAX_PATH);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -85,7 +101,11 @@ pko_execee_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     req.argc = htonl(argc);
     memcpy(req.argv, argv, argvlen);
     req.argv[argvlen] = '\0';
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -98,7 +118,11 @@ pko_execiop_req(int sock, char *argv, unsigned int argvlen, unsigned int argc) {
     req.argc = htonl(argc);
     memcpy(req.argv, argv, argvlen);
     req.argv[argvlen] = '\0';
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -110,7 +134,11 @@ pko_gsexec_req(int sock, char *file, unsigned int size) {
     req.len = htons(len);
     req.size = htons(size);
     memcpy(req.file, file, PKO_MAX_PATH);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -120,7 +148,11 @@ pko_poweroff_req(int sock) {
     len = sizeof(pko_pkt_poweroff_req);
     req.cmd = htonl(PKO_POWEROFF_CMD);
     req.len = htons(len);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -130,7 +162,11 @@ pko_reset_req(int sock) {
     len = sizeof(pko_pkt_reset_req);
     req.cmd = htonl(PKO_RESET_CMD);
     req.len = htons(len);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -141,7 +177,11 @@ pko_stop_vu(int sock, unsigned int vpu) {
     req.cmd = htonl(PKO_STOPVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }
 
 int
@@ -152,5 +192,9 @@ pko_start_vu(int sock, unsigned int vpu) {
     req.cmd = htonl(PKO_STARTVU_CMD);
     req.len = htons(len);
     req.vpu = htons(vpu);
+#ifndef __WIN32__
     return send(sock, &req, len, 0);
+#else
+    return send(sock, (const char *)&req, len, 0);
+#endif
 }

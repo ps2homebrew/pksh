@@ -30,6 +30,10 @@
 #include "linkproto_stub.h"
 #include "common.h"
 
+#ifdef __WIN32__
+#include <direct.h>
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -44,7 +48,11 @@ main(int argc, char **argv)
         return 0;
     }
 
+#ifndef __WIN32__
     bzero((void *)&addr, sizeof(addr));
+#else
+    memset((void *)&addr, sizeof(addr), 0);
+#endif
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PKO_SRV_PORT);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -58,7 +66,11 @@ main(int argc, char **argv)
     }
     // if we have device its most likely a full path
     if ( !arg_device_check(argv[1]) ) {
+#ifndef __WIN32__
         strcpy(file, getcwd(NULL, 0));
+#else
+        strcpy(file, _getcwd(NULL, 0));
+#endif
         strcat(file, "/");
         strcat(file, argv[1]);
     } else {

@@ -16,12 +16,12 @@ SOURCES=linkproto_stub.c execee.c
 	$(CC) $(CFLAGS) src\$@
 
 execee: common.obj execee.obj linkproto_stub.obj
-	$(LINK) $(LINK32_FLAGS) /out:"execee.exe" execee.obj linkproto_stub.obj
+	$(LINK) $(LINK32_FLAGS) /out:"execee.exe" execee.obj linkproto_stub.obj common.obj
 execiop: common.obj execiop.obj linkproto_stub.obj
-	$(LINK) $(LINK32_FLAGS) /out:"execiop.exe" execiop.obj linkproto_stub.obj
+	$(LINK) $(LINK32_FLAGS) /out:"execiop.exe" execiop.obj linkproto_stub.obj common.obj
 reset: common.obj reset.obj linkproto_stub.obj
-	$(LINK) $(LINK32_FLAGS) /out:"reset.exe" reset.obj linkproto_stub.obj
+	$(LINK) $(LINK32_FLAGS) /out:"reset.exe" reset.obj linkproto_stub.obj common.obj
 dumpmem: common.obj dumpmem.obj linkproto_stub.obj
-	$(LINK) $(LINK32_FLAGS) /out:"dumpmem.exe" dumpmem.obj linkproto_stub.obj
+	$(LINK) $(LINK32_FLAGS) /out:"dumpmem.exe" dumpmem.obj linkproto_stub.obj common.obj
 dumpreg: common.obj dumpreg.obj linkproto_stub.obj
-	$(LINK) $(LINK32_FLAGS) /out:"dumpreg.exe" dumpreg.obj linkproto_stub.obj
+	$(LINK) $(LINK32_FLAGS) /out:"dumpreg.exe" dumpreg.obj linkproto_stub.obj common.obj

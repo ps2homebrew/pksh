@@ -35,12 +35,20 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef __WIN32__
 #include <sys/param.h>
+#endif
+
 
 /* readline headers */
+#ifndef __WIN32__
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 
+#ifdef __WIN32__
+#define MAXPATHLEN 1024
+#endif
 #define NEWLINE '\n'
 
 extern char **environ;
