@@ -1,6 +1,6 @@
 /* -*- C -*-
  * (C) 2004 by Adresd, <adresd_ps2dev@yahoo.com>
- * (C) 2004 by Khaled Daham, <khaled@w-arts.com>
+ * (C) 2004 by Khaled Daham
  */
 
 #ifndef _NETFS
@@ -147,8 +147,6 @@
 #define FIO_LSEEK_SET   0x0000
 #define FIO_LSEEK_CURRENT 0x0001
 #define FIO_LSEEK_END   0x0002
-
-
 
 int ps2_netfs_fd;
 char send_packet[PACKET_MAXSIZE] __attribute__((aligned(16)));

@@ -256,6 +256,8 @@ pko_srv_read(int fd) {
                 sleep(1);
                 pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 1);
                 if (pko_srv_fd > 0) {
+                    close(ps2_netfs_fd);
+                    ps2_netfs_fd = -1;
                     break;
                 }
             }
@@ -443,6 +445,12 @@ cli_list(arg)
             }
         }
         ret = fd = ps2netfs_req_dopen(arg);
+        if (ret < 0) {
+            close(ps2_netfs_fd);
+            ps2_netfs_fd = -1;
+            printf("failed to open %s\n", arg);
+            return -1;
+        }
         if ( ret > 0 ) {
             printf("[%s]\n", arg);
         }
@@ -789,6 +797,8 @@ int
 cli_reconnect() {
     close(pko_srv_fd);
     pko_srv_fd = cmd_listener(dst_ip, SRV_PORT, 60);
+    close(ps2_netfs_fd);
+    ps2_netfs_fd = -1;
     return 0;
 }
 
@@ -797,6 +807,7 @@ cli_reset() {
     state = 0;
     pko_cmd_con(dst_ip, CMD_PORT);
     pko_reset_req(cmd_fd);
+    close(ps2_netfs_fd);
     ps2_netfs_fd = -1;
     return 0;
 }
