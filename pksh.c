@@ -126,6 +126,9 @@ main(int argc, char* argv[])
         ret = select(maxfd+1, &readset, NULL, NULL, NULL);
         if ( ret < 0 )
         {
+            if ( FD_ISSET(0, &readset) ) {
+                continue;
+            }
             perror("select");
             break;
         } else if (ret == 0) {
@@ -676,7 +679,7 @@ cli_exception(arg)
 }
 
 int
-cli_vumem(char *arg) {
+cli_vumem(void) {
     // if no tmpfile echo "sorry set tempfile in .pkshrc"
     // dump vu mem to tmpfile
     // load tmpfile and display, we need to figure out the window height.
