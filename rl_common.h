@@ -53,6 +53,8 @@ char * command_generator(char *, int);
 char ** command_completion(char *, int , int);
 int change_prompt(void);
 char *get_prompt(void);
+char *log_prompt(void);
+int write_log_line(char *buf);
 void cli_handler(void);
 void common_set_suffix(llist);
 #endif

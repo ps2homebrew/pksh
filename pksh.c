@@ -237,7 +237,7 @@ pko_log_read(int fd)
     if (log_to_file) {
         write(log_f_fd, buf, strlen(buf));
     } else {
-        fprintf(stdout, "%s", buf);
+        write_log_line(buf);
         fflush(stdout);
     }
     return ret;

@@ -30,6 +30,7 @@
 #include "list.h"
 
 static int cprompt = 1;
+static int lprompt = 1;
 static char prompt_buf[40];
 static char line_buf[256];
 static llist suffix_list;
@@ -156,11 +157,32 @@ change_prompt(void) {
     return(0);
 }
 
+int
+write_log_line(char *buf) {
+    lprompt = !lprompt;
+    strcpy(line_buf, rl_line_buffer);
+    rl_callback_handler_install(log_prompt(), cli_handler);
+    rl_refresh_line(0, 0);
+    printf(buf);
+    lprompt = !lprompt;
+    rl_on_new_line();
+    rl_callback_handler_install(log_prompt(), cli_handler);
+    rl_refresh_line(0, 0);
+    return(0);
+}
+
+char *
+log_prompt(void) {
+    sprintf(prompt_buf, "%s", lprompt ? "pksh> ": "log: ");
+    return prompt_buf;
+}
+
 char *
 get_prompt(void) {
     sprintf(prompt_buf, "%s", cprompt ? "pksh> ": "peer away> ");
     return prompt_buf;
 }
+
 
 void
 cli_handler(void) {
