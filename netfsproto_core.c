@@ -46,6 +46,8 @@ ps2netfs_accept_pkt(int sock, char *buf, int len, int pkt_type) {
     hlen = ntohs(hdr->len);
 
     if (hcmd != pkt_type) {
+        close(ps2_netfs_fd);
+        ps2_netfs_fd = -1;
         printf("ps2netfs: accept_pkt: Expected %x, got %x\n",
             pkt_type, hcmd);
         return 0;
