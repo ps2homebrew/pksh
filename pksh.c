@@ -221,22 +221,44 @@ pko_log_read(int fd)
     int ret;
     int size = sizeof(struct sockaddr_in);
     static char buf[1024];
+    static int loc = 0;
     struct sockaddr_in dest_addr;
-    memset(buf, 0x0, sizeof(buf));
+
+    if(loc == 0)
+       memset(buf, 0x0, sizeof(buf));
+
     memset(&(dest_addr), '\0', size);
+
+    /* Receive from, size must be at least 1 smaller 
+       than buffer for a NULL */
     ret = recvfrom(
-        fd, buf, sizeof(buf), 0,
+        fd, buf + loc, sizeof(buf) - loc - 1, 0,
         (struct sockaddr *)&dest_addr, &size
         );
 
     if (ret == -1) {
         perror("read");
     }
+
+    loc += ret;
+
     if (log_to_file) {
         write(log_f_fd, buf, strlen(buf));
+	loc = 0;
+	/* log to file isn't line orientated */
     } else {
-        write_log_line(buf);
-        fflush(stdout);
+       if(((strchr(buf, '\n')) || (sizeof(buf) - loc - 1) <= 0))
+       {
+	  /* Ideally we want entire lines but just in case check 
+	     for NL at end of string */
+	  int str_size = strlen(buf);
+	  if(buf[str_size - 1] != '\n')
+	     buf[str_size - 1] = '\n';
+
+	  write_log_line(buf);
+	  fflush(stdout);
+	  loc = 0;
+       }
     }
     return ret;
 }
