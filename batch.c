@@ -40,18 +40,18 @@ batch_io_read(int fd) {
     int ret = 0;
     unsigned int cmd;
     unsigned short hlen;
-    pko_pkt_hdr *header;
+    pkt_hdr *header;
     
-    length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pko_pkt_hdr));
+    length = pko_recv_bytes(fd, &recv_packet[0], sizeof(pkt_hdr));
     if ( length < 0 ) {
         return length;
     } else if ( length == 0 ) {
     } else {
-        header = (pko_pkt_hdr *)&recv_packet[0];
+        header = (pkt_hdr *)&recv_packet[0];
         cmd = ntohl(header->cmd);
         hlen = ntohs(header->len);
         ret = pko_recv_bytes(fd, &recv_packet[length],
-            hlen - sizeof(pko_pkt_hdr));
+            hlen - sizeof(pkt_hdr));
 
         switch (cmd) {
             case OPEN_CMD:

@@ -203,9 +203,11 @@ main(int argc, char* argv[])
         }
     }
 
+#ifdef FTP
 	if (ftpConn) {
 		FtpQuit(ftpConn);
 	}
+#endif
 
     if (strcmp(pksh_history, "") != 0 ) {
         if ( (ret = write_history(pksh_history)) != 0) 
