@@ -245,8 +245,8 @@ typedef struct
 typedef struct
 {
     unsigned int cmd;
-    unsigned int len;
-    int flags;
+    unsigned short len;
+    int ret;
     unsigned int mode;
     unsigned int attr;
     unsigned int size;
@@ -260,7 +260,7 @@ typedef struct
 typedef struct
 {
     unsigned int cmd;
-    unsigned int len;
+    unsigned short len;
     int flags;
     char path[PKO_MAX_PATH];
 } pko_pkt_dclose_rly;

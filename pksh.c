@@ -277,15 +277,12 @@ pko_srv_read(int fd) {
                 pko_lseek_file(&recv_packet[0]);
                 break;
             case PKO_DOPEN_CMD:
-                printf("pko_dopen_cmd\n");
                 pko_open_dir(&recv_packet[0]);
                 break;
             case PKO_DREAD_CMD:
-                printf("pko_dread_cmd\n");
                 pko_read_dir(&recv_packet[0]);
                 break;
             case PKO_DCLOSE_CMD:
-                printf("pko_dclose_cmd\n");
                 pko_close_dir(&recv_packet[0]);
                 break;
             case PKO_DUMPMEM_CMD:

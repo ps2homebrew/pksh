@@ -320,10 +320,10 @@ pko_open_dir(char *buf) {
         return -1;
     }
 
-    reply->retval = htonl(dirfd(dirp));
+    reply->retval = htonl((int)dirp);
 
     if (DEBUG) {
-        printf("got fd %d\n", dirfd(dirp));
+        printf("got fd %d\n", ntohl(reply->retval));
     }
 
     send(pko_srv_fd, reply, len, 0);
@@ -342,56 +342,55 @@ pko_read_dir(char *buf) {
     reply = (pko_pkt_dread_rly *)&send_packet[0];
     reply->cmd = htonl(PKO_DREAD_RLY);
     reply->len = htons(sizeof(pko_pkt_dread_rly));
-    printf("reading from fd %d\n", ntohl(pkt->fd));
-    readdir( (DIR *)ntohl(pkt->fd) );
-    if ( (dirp = readdir((DIR *)ntohl(pkt->fd))) == 0 ) {
-        return -1;
+    reply->ret = htonl((int)dirp = readdir((DIR *)ntohl(pkt->fd)));
+    if ( dirp != 0 ) {
+        stat(dirp->d_name, &st);
+
+        // mode
+        reply->mode = (st.st_mode & 0x07);
+        if (S_ISDIR(st.st_mode)) { reply->mode |= 0x20; }
+        if (S_ISLNK(st.st_mode)) { reply->mode |= 0x08; }
+        if (S_ISREG(st.st_mode)) { reply->mode |= 0x10; }
+        reply->mode = htonl(reply->mode);
+        
+        // add attributes
+        reply->attr = htonl(0);
+
+        // size
+        reply->size = htonl(st.st_size);
+
+        // add time
+        if (localtime_r(&(st.st_ctime), &loctime)) {
+            reply->ctime[6] = loctime.tm_year;
+            reply->ctime[5] = loctime.tm_mon + 1;
+            reply->ctime[4] = loctime.tm_mday;
+            reply->ctime[3] = loctime.tm_hour;
+            reply->ctime[2] = loctime.tm_min;
+            reply->ctime[1] = loctime.tm_sec;
+        }
+
+        if (localtime_r(&(st.st_atime), &loctime)) {
+            reply->atime[6] = loctime.tm_year;
+            reply->atime[5] = loctime.tm_mon + 1;
+            reply->atime[4] = loctime.tm_mday;
+            reply->atime[3] = loctime.tm_hour;
+            reply->atime[2] = loctime.tm_min;
+            reply->atime[1] = loctime.tm_sec;
+        }
+
+        if (localtime_r(&(st.st_mtime), &loctime)) {
+            reply->mtime[6] = loctime.tm_year;
+            reply->mtime[5] = loctime.tm_mon + 1;
+            reply->mtime[4] = loctime.tm_mday;
+            reply->mtime[3] = loctime.tm_hour;
+            reply->mtime[2] = loctime.tm_min;
+            reply->mtime[1] = loctime.tm_sec;
+        }
+        reply->hisize = htonl(0);
+        strncpy(reply->path, dirp->d_name, 256);
     }
-    stat(dirp->d_name, &st);
-    // add attributes
-    reply->attr = htonl(0);
 
-    // mode
-    reply->size = htonl(st.st_size);
-    reply->mode = (st.st_mode & 0x07);
-    if (S_ISDIR(st.st_mode)) { reply->mode |= 0x20; }
-    if (S_ISLNK(st.st_mode)) { reply->mode |= 0x08; }
-    if (S_ISREG(st.st_mode)) { reply->mode |= 0x10; }
-    // size
-    reply->mode = htonl(reply->mode);
-    
-    // add time
-    if (localtime_r(&(st.st_ctime), &loctime)) {
-        reply->ctime[6] = loctime.tm_year;
-        reply->ctime[5] = loctime.tm_mon + 1;
-        reply->ctime[4] = loctime.tm_mday;
-        reply->ctime[3] = loctime.tm_hour;
-        reply->ctime[2] = loctime.tm_min;
-        reply->ctime[1] = loctime.tm_sec;
-    }
-
-    if (localtime_r(&(st.st_atime), &loctime)) {
-        reply->atime[6] = loctime.tm_year;
-        reply->atime[5] = loctime.tm_mon + 1;
-        reply->atime[4] = loctime.tm_mday;
-        reply->atime[3] = loctime.tm_hour;
-        reply->atime[2] = loctime.tm_min;
-        reply->atime[1] = loctime.tm_sec;
-    }
-
-    if (localtime_r(&(st.st_mtime), &loctime)) {
-        reply->mtime[6] = loctime.tm_year;
-        reply->mtime[5] = loctime.tm_mon + 1;
-        reply->mtime[4] = loctime.tm_mday;
-        reply->mtime[3] = loctime.tm_hour;
-        reply->mtime[2] = loctime.tm_min;
-        reply->mtime[1] = loctime.tm_sec;
-    }
-
-    reply->hisize = htonl(0);
-    strncpy(reply->path, dirp->d_name, 256);
-
-    send(pko_srv_fd, reply, sizeof(reply), 0);
+    send(pko_srv_fd, reply, sizeof(pko_pkt_dread_rly), 0);
     return 0;
 }
 
