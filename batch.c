@@ -1,5 +1,5 @@
 /* -*- C -*-
- * (C) 2004 by Khaled Daham, <khaled@w-arts.com>
+ * (C) 2004 by Khaled Daham
  */
 #include "linkproto_core.h"
 #include "linkproto_stub.h"

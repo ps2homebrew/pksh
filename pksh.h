@@ -88,7 +88,7 @@ int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
 int cli_vustop(), cli_vustart();
 // ps2 net fs commands
 int cli_mkdir(), cli_ps2format(), cli_ps2sync(), cli_rmdir();
-int cli_ps2mount(), cli_ps2rename(), cli_ps2umount(), cli_devlist();
+int cli_ps2mount(), cli_rename(), cli_ps2umount(), cli_devlist();
 int cli_copy();
 
 typedef struct {
@@ -135,7 +135,7 @@ COMMAND commands[] = {
     { "mkdir", cli_mkdir, "mkdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
     { "ps2mount", cli_ps2mount, "mount [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
     { "rmdir", cli_rmdir, "rmdir [device]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..." },
-    { "ps2rename", cli_ps2rename, "rename [devive]:[dir] :: rename ..." },
+    { "rm", cli_rename, "rename [devive]:[dir] :: rename ..." },
     { "ps2sync", cli_ps2sync, "sync :: Sync IO operation with ps2netfs" },
     { "ps2umount", cli_ps2umount, "umount [devive]:[dir] :: "},
 

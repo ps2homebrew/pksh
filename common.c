@@ -223,43 +223,6 @@ is_file(char *file) {
     return (S_ISREG(finfo.st_mode));
 }
 
-int
-tokenize(char *argv[], const char *path) {
-	int ai;
-	int pi;
-	int argc;
-    int i;
-
-	argc = 0;
-	if ((path == NULL) || (strlen(path) == 0)) {
-		strcpy(argv, "");
-		return argc;
-	}
-
-	ai = 0;
-	pi = 0;
-    i = 0;
-	while (path[pi]) {
-        argv[i] = malloc(256);
-		while ((path[pi] != '\0') &&
-			(path[pi] != ' ')) {
-			argv[i][ai] =
-				path[pi];
-			ai++;
-			pi++;
-		}
-		argv[i][ai] = '\0';
-		ai++;
-		argc++;
-
-		while ((path[pi]) && (path[pi] == ' ')) {
-			pi++;
-		}
-        i++;
-	}
-	return argc;
-}
-
 void
 split_filename(char *device, char *dir, char *filename, const char *arg) {
     char *ptr;
@@ -303,7 +266,6 @@ build_argv(char *argv[], char *arg) {
     char *aptr = arg;
 
 	if ((arg == NULL) || (strlen(arg) == 0)) {
-		strcpy(argv, "");
 		return 0;
 	}
 

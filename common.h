@@ -76,5 +76,4 @@ void arg_prepend_host(char *new, char *old);
 int get_register_index(char *str, int size);
 int build_argv(char *argv[], char *arg);
 void split_filename(char *device, char *dir, char *filename, const char *arg);
-int tokenize(char *argv[], const char *path);
 #endif

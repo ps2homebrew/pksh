@@ -39,6 +39,9 @@ static struct timeval benchtime;
 static char device[MAXPATHLEN];
 static char dir[MAXPATHLEN];
 static char filename[MAXPATHLEN];
+static char device2[MAX_PATH];
+static char dir2[MAX_PATH];
+static char filename2[MAX_PATH];
 int prompt = 1;
 
 int
@@ -860,12 +863,11 @@ cli_setroot(arg)
  */
 int
 cli_copy(char *arg) {
-    int fd0, fd1, total, i;
+    int fd0, fd1, total, i, result;
     int argc;
     char *argv[MAX_ARGV];
-    unsigned int size;
+    int size;
     char buffer[65536];
-    char device2[MAX_PATH], dir2[MAX_PATH], filename2[MAX_PATH];
 
     argc = build_argv(argv, arg);
     if ( argc < 2 ) {
@@ -887,11 +889,19 @@ cli_copy(char *arg) {
                 return 0;
             }
         }
-        fd0 = open(filename, O_RDWR | O_CREAT, 0644);
-        fd1 = ps2netfs_req_open(filename2, PS2_O_RDONLY);
+        fd0 = open(argv[1], O_RDWR | O_CREAT, 0644);
+        if(fd0 < 0) {
+            printf("failed to open %s\n", argv[1]);
+            return -1;
+        }
+        fd1 = ps2netfs_req_open(argv[0], PS2_O_RDONLY);
+        if(fd1 < 0) {
+            printf("failed to open :%s:\n", argv[0]);
+            return -1;
+        }
         size = ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_END);
         ps2netfs_req_lseek(fd1, 0, FIO_LSEEK_SET);
-        printf("\n [%s --> %s]\n\n  Progress: ", filename, filename2);
+        printf("\n [%s --> %s]\n\n  Progress: ", argv[0], argv[1]);
         while(size > 0) {
             printf("#");
             ps2netfs_req_read(fd1, buffer, sizeof(buffer));
@@ -902,12 +912,47 @@ cli_copy(char *arg) {
             }
             size -= sizeof(buffer);
         }
+        printf("\n");
         ps2netfs_req_close(fd1);
         close(fd0);
         return 0;
     } else if (device2[0] != NULL ) {
-        
-
+        printf("copying to ps2\n");
+        if ( ps2_netfs_fd < 0 ) {
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
+        }
+        fd0 = open(argv[0], O_RDONLY);
+        if(fd0 < 0) {
+            printf("failed to open %s\n", argv[0]);
+            return -1;
+        }
+        fd1 = ps2netfs_req_open(argv[1], PS2_O_WRONLY | PS2_O_CREAT);
+        if(fd1 < 0) {
+            printf("failed to open :%s:\n", argv[1]);
+            return -1;
+        }
+        size = lseek(fd0, 0, SEEK_END);
+        lseek(fd0, 0, SEEK_SET);
+        printf("\n [%s --> %s]\n\n  Progress: ", argv[0], argv[1]);
+        total = 0;
+        while(total < size) {
+            printf("#\n");
+            result = read(fd0, buffer, sizeof(buffer));
+            if (result < 0) {
+            }
+            result = ps2netfs_req_write(fd1, buffer, result);
+            if (result < 0) {
+            }
+            total += result;
+        }
+        printf("\n");
+        ps2netfs_req_close(fd1);
+        close(fd0);       
+        return 0;
     } else {
         sprintf(clicom, "cp %s", arg);
         return (system(clicom));
@@ -1006,7 +1051,6 @@ cli_ps2format(char *arg) {
     ret = ps2netfs_req_format(arg, 0);
     if ( ret < 0 ) {
         printf("format failed, ret = %d\n", ret);
-    } else {
     }
     return 0;
 }
@@ -1037,18 +1081,26 @@ cli_mkdir(char *arg) {
 }
 
 int
-cli_ps2rename(char *arg) {
+cli_rename(char *arg) {
     int ret;
-    if ( ps2_netfs_fd < 0 ) {
-        ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    if (!arg)
+        arg = "";
+    split_filename(device, dir, filename, arg);
+    if(device[0] != NULL) {
         if ( ps2_netfs_fd < 0 ) {
-            printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
-            return 0;
+            ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+            if ( ps2_netfs_fd < 0 ) {
+                printf("PS2Net FS connection failed, make sure ps2netfs.irx is loaded\n");
+                return 0;
+            }
         }
-    }
-    ret = ps2netfs_req_delete(arg, 0);
-    if ( ret < 0 ) {
-        printf("rename failed, %d\n", ret);
+        ret = ps2netfs_req_delete(arg, 0);
+        if ( ret < 0 ) {
+            printf("rename failed, %d\n", ret);
+        }
+    } else {
+        sprintf(clicom, "rm %s", arg);
+        return (system(clicom));
     }
     return 0;
 }
@@ -1056,8 +1108,6 @@ cli_ps2rename(char *arg) {
 int
 cli_ps2mount(char *arg) {
     int ret;
-    char *device, fsname;
-
     if ( ps2_netfs_fd < 0 ) {
         ps2_netfs_fd = ps2netfs_open(dst_ip, PS2NETFS_LISTEN_PORT, 2);
         if ( ps2_netfs_fd < 0 ) {
@@ -1065,9 +1115,8 @@ cli_ps2mount(char *arg) {
             return 0;
         }
     }
-    /* arg_get_device(device, arg); */
-    /* arg_get_fsname(fsname, arg); */
-    ret = ps2netfs_req_mount(device, fsname, PS2NETFS_FIO_MT_RDWR, "", 0);
+    split_filename(device, dir, filename, arg);
+    ret = ps2netfs_req_mount(device, filename, PS2NETFS_FIO_MT_RDWR, "", 0);
     if ( ret < 0 ) {
         printf("mount failed, ret = %d\n", ret);
     } else {
