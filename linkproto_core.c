@@ -52,6 +52,11 @@ pko_set_root(char *p) {
 }
 
 int
+pko_ps2netfs_setup(char *dst_ip, int port, int timeout) {
+    return pko_cmd_setup(dst_ip, port, timeout);
+}
+
+int
 pko_log_setup(char *src_ip, int port) {
     int fd;
     int server_addr_size = sizeof(struct sockaddr_in);

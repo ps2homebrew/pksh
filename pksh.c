@@ -70,6 +70,12 @@ main(int argc, char* argv[])
         return 1;
     }
 
+    // fast check if ps2_netfs is here
+    ps2_netfs_fd = pko_ps2netfs_setup(dst_ip, PS2NETFS_LISTEN_PORT, 2);
+    if (ps2_netfs_fd > 0) {
+        printf("PS2NetFS found\n");
+    }
+
     // client stuff
     for(i = 0; i < MAX_CLIENTS; i++) {
         client[i] = -1;
@@ -100,8 +106,7 @@ main(int argc, char* argv[])
 
     initialize_readline();
 
-    while(doloop)
-    {
+    while(doloop) {
         readset = master_set;
         ret = select(maxfd+1, &readset, NULL, NULL, NULL);
         if ( ret < 0 )
@@ -184,6 +189,7 @@ main(int argc, char* argv[])
         if ( (ret = write_history(pksh_history)) != 0) 
             perror("write_history");
     }
+    printf("\n");
     return(0);
 }
 
@@ -400,6 +406,21 @@ cli_make(arg)
     return (system(clicom));
 }
 
+int
+cli_mkdir(arg)
+    char *arg;
+{
+    return 0;
+}
+
+int
+cli_mount(arg)
+    char *arg;
+{
+    if ( ps2_netfs_fd < 0 ) {
+    }
+    return 0;
+}
 
 int
 cli_list(arg)
@@ -432,6 +453,11 @@ cli_cd(arg)
     }
     cli_pwd();
     return (0);
+}
+
+int
+cli_format(arg) {
+    return 0;
 }
 
 int
@@ -640,6 +666,12 @@ cli_exception(arg)
 }
 
 int
+cli_umount(char *arg) {
+    return 0;
+}
+
+
+int
 cli_vustart(char *arg) {
     int vpu = strtol(arg, (char **)NULL, 10);
     pko_cmd_con(dst_ip, PKO_CMD_PORT);
@@ -685,18 +717,11 @@ cli_poweroff() {
 }
 
 int
-cli_reset() {
-    state = 0;
-    pko_cmd_con(dst_ip, PKO_CMD_PORT);
-    pko_reset_req(pko_cmd_fd);
-    return 0;
-}
-
-int
 cli_status() {
     printf(" TCP srv fd = %d\n", pko_srv_fd);
     printf(" UDP log fd = %d\n", pko_log_fd);
     printf(" PKSH cmd fd = %d\n", pksh_srv_fd);
+    printf(" PS2NetFS fd = %d\n", ps2_netfs_fd);
     if ( log_to_file )
         printf(" Logging to file\n");
     else
@@ -721,8 +746,18 @@ cli_status() {
 }
 
 int
+cli_sync() {
+    return 0;
+}
+
+int
 cli_quit() {
     doloop = 0;
+    return 0;
+}
+
+int
+cli_rename() {
     return 0;
 }
 
@@ -730,6 +765,19 @@ int
 cli_reconnect() {
     close(pko_srv_fd);
     pko_srv_fd = pko_cmd_setup(dst_ip, PKO_SRV_PORT, 60);
+    return 0;
+}
+
+int
+cli_reset() {
+    state = 0;
+    pko_cmd_con(dst_ip, PKO_CMD_PORT);
+    pko_reset_req(pko_cmd_fd);
+    return 0;
+}
+
+int
+cli_rmdir() {
     return 0;
 }
 
@@ -779,6 +827,13 @@ cli_debug() {
         pko_set_debug(1);
         printf(" Debug on\n");
     }
+    return 0;
+}
+
+int
+cli_devlist(arg)
+    char *arg;
+{
     return 0;
 }
 

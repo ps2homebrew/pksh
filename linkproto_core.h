@@ -87,6 +87,7 @@ int pko_srv_fd;
 int pksh_srv_fd;
 int pko_cmd_fd;
 int pko_log_fd;
+int ps2_netfs_fd;
 
 /*! Function for reading data from clients and ps2link
  * @param s The socket to connect to
@@ -108,6 +109,13 @@ int pko_send_bytes(int s, char *buf, int bytes);
  * @return filedescriptor or -1 upon failure.
  */
 int pko_cmd_con(char *ip, int port);
+/*! Function for establishing a command listener.
+ * @param dst_ip a char pointer to ipaddress
+ * @param port command port
+ * @param timeout number of seconds before we time out.
+ * @return filedescriptor or -1 upon failure.
+ */
+int pko_ps2netfs_setup(char *dst_ip, int port, int timeout);
 /*! Function for establishing a command listener.
  * @param dst_ip a char pointer to ipaddress
  * @param port command port

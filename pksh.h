@@ -52,6 +52,7 @@
 #include "linkproto_stub.h"
 #include "common.h"
 #include "rl_common.h"
+#include "ps2fs.h"
 
 #define MAX_SIZE        8192
 #define MAX_NO_PROMPT_COUNT 20
@@ -86,6 +87,8 @@ int cli_reset(), cli_status(), cli_log(), cli_verbose();
 int cli_setroot(), cli_debug(), cli_gsexec();
 int cli_poweroff(), cli_exception(), cli_dumpmem(), cli_dumpregs();
 int cli_vustop(), cli_vustart();
+int cli_mkdir(), cli_format(), cli_sync(), cli_rmdir(), cli_mount();
+int cli_rename(), cli_umount(), cli_devlist();
 
 typedef struct {
     char *name;     /* User printable name of the function. */
@@ -105,26 +108,35 @@ COMMAND commands[] = {
     { "?", cli_help, "? :: Synonym for `help'." },
     { "cd", cli_cd, "cd [dir] :: Change pksh directory to [dir]." },
     { "debug", cli_debug, "debug :: Show pksh debug messages. ( alt-d )" },
+    { "devlist", cli_devlist, "devlist ::" },
     { "dumpmem", cli_dumpmem, "dumpmem [file] [offset] [size] :: Dump [size] bytes of memory from [offset] to [file]." },
     { "dumpreg", cli_dumpregs, "dumpreg [file] [dma|intc|gs|timer|vif|all] :: Dumps given registers to file." },
+    { "exit", cli_quit, "exit :: Exits pksh ( alt-q )" },
     { "eeexec", cli_execee, "eeexec [file] [argn] ... :: Execute file on EE." },
     { "exception", cli_exception, "exception [screen|console] :: Exception dumps to [screen] or [console]." },
     { "execee", cli_execee, "execee [file] [argn] ... :: Execute file on EE." },
     { "execiop", cli_execeiop, "execiop [file] :: Execute file on IOP." },
     { "execgs", cli_gsexec, "execgs [file] :: Send display list to GS." },
+    { "format", cli_format, "format ... "},
     { "gsexec", cli_gsexec, "gsexec [file] :: Send display list to GS." },
     { "help", cli_help, "help :: Display this text." },
     { "iopexec", cli_execeiop, "iopexec [file] :: Execute file on IOP." },
     { "list", cli_list, "list [dir] :: List files in [dir]." },
     { "log", cli_log, "log [file] :: Log messages from PS2 to [file]."},
-    { "ls", cli_list, "ls [dir] :: Synonym for `list'" },
+    { "ls", cli_list, "ls [dir] :: Synonym for list" },
     { "make", cli_make, "make [argn] ... :: Execute make [argn] ..." },
+    { "mkdir", cli_mkdir, "mkdir [devive]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
+    { "mount", cli_mount, "mount [devive]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..."},
     { "poweroff", cli_poweroff, "poweroff :: Poweroff the PS2"},
     { "pwd", cli_pwd, "pwd :: Print the current working directory ( alt-p )" },
     { "quit", cli_quit, "quit :: Quit pksh ( alt-q )" },
+    { "rename", cli_rename, "rename [devive]:[dir] :: rename ..." },
     { "reset", cli_reset, "reset :: Resets ps2 side ( alt-r )" },
+    { "rmdir", cli_rmdir, "rmdir [devive]:[dir] ... :: remove dir [dir] on device [device] (default is hdd:) ..." },
     { "setroot", cli_setroot, "setroot [dir] :: Sets [dir] to be root dir." },
     { "status", cli_status, "status :: Display some pksh information. ( alt-s )" },
+    { "sync", cli_sync, "sync :: Sync IO operation with ps2netfs" },
+    { "umount", cli_umount, "umount [devive]:[dir] :: "},
     { "verbose", cli_verbose, "verbose :: Show verbose pksh messages. ( alt-v )" },
     { "vustart", cli_vustart, "vustart [0|1] :: Start vu0+vif0 or vu1+vif1." },
     { "vustop", cli_vustop, "vustop [0|1] :: Stop vu0+vif0 or vu1+vif1." },
